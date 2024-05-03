@@ -5,11 +5,30 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 
+/// Struct of output in tfstate
 pub struct TfstateOutput {
 	name: String,
 	value: serde_json::Value,
 }
 
+/// Get outputs in tfstate.
+///
+/// Setting `show_output` to `true` displays a list of outputs on stdout.
+///
+/// # Output example
+///
+/// ```text
+/// Number of outputs: 3.
+/// --- 1 ---
+/// name : aws_dynamodb_table_attribute
+/// value: Array [Object {"name": String("channel_url"), "type": String("S")}]
+/// --- 2 ---
+/// name : aws_dynamodb_table_deletion_protection_enabled
+/// value: Bool(false)
+/// --- 3 ---
+/// name : aws_dynamodb_table_read_capacity
+/// value: Number(0)
+/// ```
 pub fn get_outputs(
 	show_output: bool,
 	file_path: &str,

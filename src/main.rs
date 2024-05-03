@@ -12,6 +12,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let clap = clap::new_clap_command();
 	let base_url = clap.get_one::<String>("base_url").unwrap();
 	let show_output = clap.get_flag("show_outputs");
+	let allow_update = clap.get_flag("allow_update");
 	let tfstate_file = clap.get_one::<String>("tfstate_file").unwrap();
 
 	get_workspaces(

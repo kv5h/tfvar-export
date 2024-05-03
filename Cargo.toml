@@ -2,7 +2,7 @@
 name = "tfvar-export"
 version = "0.1.0"
 edition = "2021"
-description = "Set Terraform Cloud variables across Projects and Workspaces from output of current workspace."
+description = "Set Terraform Cloud variables across Projects and Workspaces from outputs of current workspace."
 
 [dependencies]
 clap = { version = "4.5.0", features = ["cargo"] }
