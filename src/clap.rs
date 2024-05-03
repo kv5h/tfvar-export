@@ -2,10 +2,6 @@ use clap::{crate_description, crate_name, crate_version, Arg, ArgAction, Command
 
 pub fn new_clap_command() -> clap::ArgMatches {
 	Command::new(crate_name!())
-		//.override_usage(format!(
-		// 	"{} [OPTIONS] <PATH_TO_TFSTATE_FILE>",
-		// 	crate_name!()
-		//))
 		.about(crate_description!())
 		.version(crate_version!())
 		.arg(
