@@ -1,6 +1,6 @@
 # tfvar-export
 
-Set Terraform variables from output value across Projects and Workspaces.
+Set Terraform Cloud variables across Projects and Workspaces from output of current workspace.
 
 ## Prerequisite
 

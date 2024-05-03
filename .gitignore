@@ -17,6 +17,9 @@ Cargo.lock
 .envrc
 env.toml
 
+# Terraform Statefile
+*.tfstate
+
 # LocalStack
 **/.docker/localstack
 

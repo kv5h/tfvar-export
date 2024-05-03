@@ -52,27 +52,17 @@ pub async fn get_projects(
 		.await?;
 
 	let response_projects_val: serde_json::Value = serde_json::from_str(&response_projects)?;
-	let response_projects_meta_total = format!(
-		"{}",
-		response_projects_val["meta"]["status-counts"]["total"]
-	)
-	.parse::<usize>()?;
-
-	// Terraform Project map consists of `Project ID:Project Name`
 	let mut terraform_projects_map = HashMap::new();
+	response_projects_val["data"]
+		.as_array()
+		.unwrap()
+		.into_iter()
+		.for_each(|val| {
+			let terraform_project_id = val["id"].as_str().unwrap().to_string();
+			let terraform_project_name = val["attributes"]["name"].as_str().unwrap().to_string();
 
-	for i in 0..response_projects_meta_total {
-		// Involves conversion from JSON string to Rust String.
-		let terraform_project_id = format!("{}", response_projects_val["data"][i]["id"])
-			.parse::<String>()?
-			.replace("\"", "");
-		let terraform_project_name =
-			format!("{}", response_projects_val["data"][i]["attributes"]["name"])
-				.parse::<String>()?
-				.replace("\"", "");
-
-		terraform_projects_map.insert(terraform_project_id, terraform_project_name);
-	}
+			terraform_projects_map.insert(terraform_project_id, terraform_project_name);
+		});
 
 	Ok(terraform_projects_map)
 }
@@ -105,49 +95,32 @@ pub async fn get_workspaces(
 		.await?;
 
 	let response_workspaces_val: serde_json::Value = serde_json::from_str(&response_workspaces)?;
-	let response_workspaces_meta_total = format!(
-		"{}",
-		response_workspaces_val["meta"]["status-counts"]["total"]
-	)
-	.parse::<usize>()?;
-
 	let mut terraform_workspaces = Vec::new();
+	let terraform_projects_map = get_projects(api_base_url, organization_name, token).await?;
+	response_workspaces_val["data"]
+		.as_array()
+		.unwrap()
+		.into_iter()
+		.for_each(|val| {
+			let terraform_workspace_id = val["id"].as_str().unwrap().to_string();
+			let terraform_workspace_name = val["attributes"]["name"].as_str().unwrap().to_string();
+			let terraform_project_id = val["relationships"]["project"]["data"]["id"]
+				.as_str()
+				.unwrap()
+				.to_string();
 
-	for i in 0..response_workspaces_meta_total {
-		// Involves conversion from JSON string to Rust String.
-		let terraform_workspace_id = format!("{}", response_workspaces_val["data"][i]["id"])
-			.parse::<String>()?
-			.replace("\"", "");
-		let terraform_workspace_name = format!(
-			"{}",
-			response_workspaces_val["data"][i]["attributes"]["name"]
-		)
-		.parse::<String>()?
-		.replace("\"", "");
-		let terraform_project_id = format!(
-			"{}",
-			response_workspaces_val["data"][i]["relationships"]["project"]["data"]["id"]
-		)
-		.parse::<String>()?
-		.replace("\"", "");
-
-		let terraform_projects_map = get_projects(api_base_url, organization_name, token).await?;
-
-		terraform_workspaces.push(TerraformWorkspace {
-			terraform_workspace_id,
-			terraform_workspace_name,
-			terraform_project: TerraformProject {
-				terraform_project_id: terraform_project_id.clone(),
-				terraform_project_name: terraform_projects_map
-					.get(&terraform_project_id)
-					.unwrap()
-					.to_string(),
-			},
-		})
-	}
-
-	// TODO
-	println!("{:#?}", terraform_workspaces);
+			terraform_workspaces.push(TerraformWorkspace {
+				terraform_workspace_id,
+				terraform_workspace_name,
+				terraform_project: TerraformProject {
+					terraform_project_id: terraform_project_id.clone(),
+					terraform_project_name: terraform_projects_map
+						.get(&terraform_project_id)
+						.unwrap()
+						.to_string(),
+				},
+			})
+		});
 
 	Ok(terraform_workspaces)
 }
