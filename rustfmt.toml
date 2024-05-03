@@ -1,0 +1,14 @@
+comment_width = 100
+doc_comment_code_block_width = 80
+error_on_unformatted = true
+format_code_in_doc_comments = true
+format_strings = true
+hard_tabs = true
+imports_granularity = "Module"
+match_block_trailing_comma = true
+newline_style = "Unix"
+normalize_comments = true
+normalize_doc_attributes = true
+overflow_delimited_expr = true
+reorder_impl_items = true
+wrap_comments = true
