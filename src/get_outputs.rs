@@ -11,7 +11,7 @@ pub struct TfstateOutput {
 	value: serde_json::Value,
 }
 
-/// Get outputs in tfstate.
+/// Get outputs from tfstate.
 ///
 /// Setting `show_output` to `true` displays a list of outputs on stdout.
 ///
