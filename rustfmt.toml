@@ -2,6 +2,7 @@ comment_width = 100
 doc_comment_code_block_width = 80
 error_on_unformatted = true
 format_code_in_doc_comments = true
+format_macro_matchers = true
 format_strings = true
 hard_tabs = true
 imports_granularity = "Module"

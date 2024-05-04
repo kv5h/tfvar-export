@@ -15,11 +15,18 @@ pub fn new_clap_command() -> clap::ArgMatches {
 				.help("Base URL of Terraform API"),
 		)
 		.arg(
+			Arg::new("enable_info_log")
+				.short('l')
+				.long("info-log")
+				.action(ArgAction::SetTrue)
+				.help("Enable `Info` log"),
+		)
+		.arg(
 			Arg::new("show_outputs")
 				.short('s')
 				.long("show-outputs")
 				.action(ArgAction::SetTrue)
-				.help("Show list of Output and exit"),
+				.help("Show a list of outputs and exit"),
 		)
 		.arg(
 			Arg::new("allow_update")

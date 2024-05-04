@@ -13,6 +13,16 @@ labor-intensive but also carries the risk of operational errors. This tool
 allows semi-automatic registration of variables without creating dependencies
 between workspaces.
 
+## Remarks
+
+- Only variable value is covered, hence description will NOT be updated or
+  described.
+- All variables are registered...
+  - as `HCL` typed value for the program compatibility.
+  - as `Non sensitive`, so please be careful not to specify sensitive output
+    values.
+  - as category of `terraform` (NOT `environment variables`).
+
 ## Prerequisite
 
 1. Export environment variables
@@ -44,7 +54,7 @@ output "aws_dynamodb_table_attribute" {
 }
 ```
 
-define the export list  as follows:
+define the export list as follows:
 
 ```
 aws_dynamodb_table_attribute,dynamodb_table_attribute
