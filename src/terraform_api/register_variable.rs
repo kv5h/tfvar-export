@@ -22,7 +22,7 @@ pub struct TerraformVariableStatus {
 pub struct TerraformVariableProperty {
 	variable_id: Option<String>,
 	variable_name: String,
-	value: String,
+	value: serde_json::Value,
 }
 
 /// Terraform variable creation result
@@ -43,6 +43,8 @@ pub async fn update_variable(
 ) -> Result<(), Box<dyn Error>> {
 	// Limit the rate 20 requests per second.
 	let ratelimiter = Ratelimiter::builder(20, Duration::from_secs(1))
+		.max_tokens(20)
+		.initial_available(20)
 		.build()
 		.unwrap();
 
@@ -100,13 +102,14 @@ pub async fn create_variable(
 	workspace_id: &str,
 	terraform_variable_property: &Vec<TerraformVariableProperty>,
 ) -> Result<Vec<TerraformVariableCreationResult>, Box<dyn Error>> {
-	// Limit the rate 20 requests per second.
-	let ratelimiter = Ratelimiter::builder(20, Duration::from_secs(1))
-		.build()
-		.unwrap();
-
 	let mut result = Vec::new();
 
+	// Limit the rate 20 requests per second.
+	let ratelimiter = Ratelimiter::builder(20, Duration::from_secs(1))
+		.max_tokens(20)
+		.initial_available(20)
+		.build()
+		.unwrap();
 	let count = terraform_variable_property.len();
 	for i in 0..count {
 		if let Err(sleep) = ratelimiter.try_wait() {
@@ -114,23 +117,24 @@ pub async fn create_variable(
 			continue;
 		}
 
-		let mut map = HashMap::new();
 		let data = json!({
-		"type": "vars",
-		"attributes": {
-		  "key": terraform_variable_property[i].variable_name,
-		  "value": terraform_variable_property[i].value,
-		  "description": "",
-		  "category": "terraform",
-		  "hcl": true,
-		}});
+				  "data":{
+					  "type": "vars",
+					  "attributes": {
+						  "key": terraform_variable_property[i].variable_name,
+						  "value":  terraform_variable_property[i].value,
+						  "description": "",
+						  "category": "terraform",
+						  "hcl": true}}}
+		);
+		let mut map = HashMap::new();
 		map.insert("data", data.to_string());
 
 		let response = Client::new()
 			.post(format!("{}/workspaces/{}/vars", api_base_url, workspace_id))
 			.header("Authorization", format!("Bearer {}", token))
 			.header("Content-Type", "application/vnd.api+json")
-			.json(&map)
+			.body(data.to_string())
 			.send()
 			.await?;
 
@@ -151,7 +155,6 @@ pub async fn create_variable(
 	}
 
 	info!("Variables created: {}.", count);
-	println!("Variables created: {}.", count); // TODO:
 
 	Ok(result)
 }
@@ -256,7 +259,6 @@ mod tests {
 		let var_1 = Alphanumeric
 			.sample_string(&mut rand::thread_rng(), 32)
 			.to_lowercase();
-    let json_value = serde_json::from_str(&var_1).unwrap();
 		let res = create_variable(
 			"https://app.terraform.io/api/v2",
 			&env::var("TFVE_TOKEN").unwrap(),
@@ -264,7 +266,7 @@ mod tests {
 			&vec![TerraformVariableProperty {
 				variable_id: None,
 				variable_name: var_1.clone(),
-				value: json_value,
+				value: json!(var_1),
 			}],
 		)
 		.await
