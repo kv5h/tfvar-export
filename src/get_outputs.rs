@@ -1,7 +1,5 @@
 //! Read tfstate and return outputs.
 
-use std::error::Error;
-use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 
@@ -32,8 +30,8 @@ pub struct TfstateOutput {
 pub fn get_outputs(
 	show_output: bool,
 	file_path: &str,
-) -> Result<Vec<TfstateOutput>, Box<dyn Error>> {
-	let tfstate = File::open(file_path)?;
+) -> Result<Vec<TfstateOutput>, Box<dyn std::error::Error>> {
+	let tfstate = std::fs::File::open(file_path)?;
 	let mut buf_reader = BufReader::new(tfstate);
 	let mut contents = String::new();
 	buf_reader.read_to_string(&mut contents)?;
