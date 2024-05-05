@@ -27,6 +27,7 @@ pub struct TerraformVariableProperty {
 pub struct TerraformVariableCreationResult {
     variable_id: String,
     variable_name: String,
+    value: serde_json::Value,
 }
 
 /// Update Terraform Workspace variable(s).
@@ -120,16 +121,36 @@ pub async fn create_variable(
             continue;
         }
 
+        let is_hcl = match &terraform_variable_property[i].value {
+            x if x.is_boolean()
+                | x.is_f64()
+                | x.is_i64()
+                | x.is_number()
+                | x.is_string()
+                | x.is_u64() =>
+            {
+                false
+            },
+            _ => true,
+        };
+
+        let is_string = match &terraform_variable_property[i].value {
+            x if x.is_string() => true,
+            _ => false,
+        };
+
         let data = json!({
-                  "data":{
-                      "type": "vars",
-                      "attributes": {
-                          "key": terraform_variable_property[i].variable_name,
-                          "value": json!(terraform_variable_property[i].value).to_string(),
-                          "description": "",
-                          "category": "terraform",
-                          "hcl": true}}}
-        );
+            "data":{
+                "type": "vars",
+                "attributes": {
+                    "key": terraform_variable_property[i].variable_name,
+                    "value": if is_string {terraform_variable_property[i].value.as_str().unwrap().to_string()} else {terraform_variable_property[i].value.to_string()},
+                    "description": "",
+                    "category": "terraform",
+                    "hcl": is_hcl
+                  }
+              }
+        });
         let mut map = HashMap::new();
         map.insert("data", data.to_string());
 
@@ -148,12 +169,21 @@ pub async fn create_variable(
         );
 
         let json_value: serde_json::Value = serde_json::from_str(&response.text().await.unwrap())?;
+        let value = if is_string {
+            json_value["data"]["attributes"]["value"].clone()
+        } else {
+            serde_json::from_str::<serde_json::Value>(
+                json_value["data"]["attributes"]["value"].as_str().unwrap(),
+            )
+            .unwrap()
+        };
         result.push(TerraformVariableCreationResult {
             variable_id: json_value["data"]["id"].as_str().unwrap().to_string(),
             variable_name: json_value["data"]["attributes"]["key"]
                 .as_str()
                 .unwrap()
                 .to_string(),
+            value: value,
         });
     }
 
@@ -170,7 +200,7 @@ pub async fn check_variable_status(
     let token = api_conn_prop.token();
     let workspace_id = api_conn_prop.workspace_id();
 
-    let path = format!("/api/v2/workspaces/{}/vars",workspace_id );
+    let path = format!("/api/v2/workspaces/{}/vars", workspace_id);
     url.set_path(&path);
 
     let response = reqwest::Client::new()
@@ -214,11 +244,8 @@ pub async fn check_variable_status(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::Local;
     use rand::distributions::{Alphanumeric, DistString};
-    use std::env;
-    use url::Url;
-
-    use crate::terraform_api::connection_prop::TerraformApiConnectionProperty;
 
     #[tokio::test]
     async fn test_check_variable_status() {
@@ -232,10 +259,10 @@ mod tests {
             .sample_string(&mut rand::thread_rng(), 32)
             .to_lowercase();
         let api_conn_prop = TerraformApiConnectionProperty::new(
-            Url::parse("https://app.terraform.io").unwrap(),
+            url::Url::parse("https://app.terraform.io").unwrap(),
             None,
-            env::var("TFVE_TOKEN").unwrap(),
-            Some(env::var("TFVE_WORKSPACE_ID").unwrap().to_string()),
+            std::env::var("TFVE_TOKEN").unwrap(),
+            Some(std::env::var("TFVE_WORKSPACE_ID").unwrap().to_string()),
         );
         let res = check_variable_status(&api_conn_prop, &vec![
             var_1.clone(),
@@ -268,35 +295,56 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_variable() {
-        // NOTE:
-        //   value: json!(["twitter-feed-rs", "tflambda"]),
-        //   value: json!(&str),
-        let var_1 = Alphanumeric
-            .sample_string(&mut rand::thread_rng(), 32)
-            .to_lowercase();
         let api_conn_prop = TerraformApiConnectionProperty::new(
-            Url::parse("https://app.terraform.io").unwrap(),
+            url::Url::parse("https://app.terraform.io").unwrap(),
             None,
-            env::var("TFVE_TOKEN").unwrap(),
-            Some(env::var("TFVE_WORKSPACE_ID").unwrap().to_string()),
+            std::env::var("TFVE_TOKEN").unwrap(),
+            Some(
+                std::env::var("TFVE_WORKSPACE_ID_TESTING")
+                    .unwrap()
+                    .to_string(),
+            ),
         );
-        let res = create_variable(&api_conn_prop, &vec![TerraformVariableProperty {
-            variable_id: None,
-            variable_name: var_1.clone(),
-            value: json!(["twitter-feed-rs", "tflambda"]),
-        }])
-        .await
-        .unwrap();
 
-        assert!(
-            check_variable_status(&api_conn_prop, &vec![res
+        let cases: Vec<serde_json::Value> = vec![
+            json!("aaa\"bbb"),                        // string with quote
+            json!("aaa"),                             // string
+            json!(-1.2345),                           // negative float
+            json!(0),                                 // number
+            json!(1.2345),                            // float
+            json!(["aaa", "bbb", "ccc"]),             // array
+            json!([{"a":"aaa","b":"bbb","c":"ccc"}]), // list of map
+            json!(false),                             // bool
+            json!({"a":"aaa","b":"bbb","c":null}),    // map
+            json!({"bool":{"sensitive":false,"type":"bool","value":false},"list_of_object":{"sensitive":false,"type":["object",{"a":"string","b":"string","c":"string"}],"value":{"a":"aaa","b":"bbb","c":null}},"map_of_string":{"sensitive":false,"type":["map","string"],"value":{"a":"aaa","b":"bbb","c":"ccc"}},"number_0":{"sensitive":false,"type":"number","value":0},"number_float":{"sensitive":false,"type":"number","value":1.2345},"number_negative":{"sensitive":false,"type":"number","value":-1.2345},"sensitive":{"sensitive":true,"type":"string","value":"**************"},"set_of_object":{"sensitive":false,"type":["set",["object",{"name":"string","type":"string"}]],"value":[{"name":"aaa","type":"bbb"}]},"string":{"sensitive":false,"type":"string","value":"aaa"},"string_with_quote":{"sensitive":false,"type":"string","value":"aaa\"bbb"},"tuple":{"sensitive":false,"type":["tuple",["string","string"]],"value":["aaa","bbb"]}}
+            ), // complex
+        ];
+        for case in cases.iter() {
+            let date = Local::now();
+            let val = Alphanumeric
+                .sample_string(&mut rand::thread_rng(), 8)
+                .to_lowercase();
+            let res = create_variable(&api_conn_prop, &vec![TerraformVariableProperty {
+                variable_id: None,
+                variable_name: format!("{}-{}", date.format("%Y%m%d%H%M%S%f"), val.clone()),
+                value: case.clone(),
+            }])
+            .await
+            .unwrap();
+
+            let status = check_variable_status(&api_conn_prop, &vec![res
                 .get(0)
                 .unwrap()
                 .variable_id
-                .clone()],)
+                .clone()])
             .await
-            .unwrap()[0]
-                .already_exist
-        )
+            .unwrap();
+
+            assert_eq!(status[0].already_exist, true);
+            assert_eq!(
+                &serde_json::from_str::<serde_json::Value>(&res[0].value.to_string()).unwrap(),
+                case
+            );
+        }
     }
 }

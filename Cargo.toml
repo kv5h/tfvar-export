@@ -5,6 +5,7 @@ edition = "2021"
 description = "Set Terraform Cloud variables across Projects and Workspaces from outputs of current workspace."
 
 [dev-dependencies]
+chrono = "0.4.38"
 rand = "0.8.5"
 
 [dependencies]
