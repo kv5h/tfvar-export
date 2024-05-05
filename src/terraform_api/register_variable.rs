@@ -139,12 +139,22 @@ pub async fn create_variable(
             _ => false,
         };
 
+        let data_value = if is_string {
+            terraform_variable_property[i]
+                .value
+                .as_str()
+                .unwrap()
+                .to_string()
+        } else {
+            terraform_variable_property[i].value.to_string()
+        };
+
         let data = json!({
             "data":{
                 "type": "vars",
                 "attributes": {
                     "key": terraform_variable_property[i].variable_name,
-                    "value": if is_string {terraform_variable_property[i].value.as_str().unwrap().to_string()} else {terraform_variable_property[i].value.to_string()},
+                    "value": data_value,
                     "description": "",
                     "category": "terraform",
                     "hcl": is_hcl
