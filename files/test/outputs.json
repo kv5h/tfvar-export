@@ -1,0 +1,86 @@
+{
+    "bool": {
+        "sensitive": false,
+        "type": "bool",
+        "value": false
+    },
+    "list_of_object": {
+        "sensitive": false,
+        "type": [
+            "object",
+            {
+                "a": "string",
+                "b": "string",
+                "c": "string"
+            }
+        ],
+        "value": {
+            "a": "aaa",
+            "b": "bbb",
+            "c": null
+        }
+    },
+    "map_of_string": {
+        "sensitive": false,
+        "type": ["map", "string"],
+        "value": {
+            "a": "aaa",
+            "b": "bbb",
+            "c": "ccc"
+        }
+    },
+    "number_0": {
+        "sensitive": false,
+        "type": "number",
+        "value": 0
+    },
+    "number_float": {
+        "sensitive": false,
+        "type": "number",
+        "value": 1.2345
+    },
+    "number_negative": {
+        "sensitive": false,
+        "type": "number",
+        "value": -1.2345
+    },
+    "sensitive": {
+        "sensitive": true,
+        "type": "string",
+        "value": "**************"
+    },
+    "set_of_object": {
+        "sensitive": false,
+        "type": [
+            "set",
+            [
+                "object",
+                {
+                    "name": "string",
+                    "type": "string"
+                }
+            ]
+        ],
+        "value": [
+            {
+                "name": "aaa",
+                "type": "bbb"
+            }
+        ]
+    },
+    "string": {
+        "sensitive": false,
+        "type": "string",
+        "value": "aaa"
+    },
+    "string_with_quote": {
+        "sensitive": false,
+        "type": "string",
+        "value": "aaa\"bbb"
+    },
+    "tuple": {
+        "sensitive": false,
+        "type": ["tuple", ["string", "string"]],
+        "value": ["aaa", "bbb"]
+    }
+}

@@ -3,7 +3,7 @@
 Set Terraform Cloud variables across Projects and Workspaces from outputs of
 current workspace.
 
-## Use cases
+## Motivation
 
 When you need to share Terraform Output values across workspaces,
 `terraform_remote_state` data source is the primary way, but this feature can
@@ -17,10 +17,13 @@ between workspaces.
 
 - Only variable value is covered, hence description will NOT be updated or
   described.
+- Outputs with type of `string`, `number` or `bool` are created/updated as
+  `hcl = false` and the others as `hcl = true`.
+  - Reference:
+    [`Types and Values`](https://developer.hashicorp.com/terraform/language/expressions/types)
 - All variables are registered...
-  - as `HCL` typed value for the program compatibility.
-  - as `Non sensitive`, so please be careful not to specify sensitive output
-    values.
+  - as `Non sensitive`, so please **be careful not to specify sensitive output
+    values**.
   - as category of `terraform` (NOT `environment variables`).
 
 ## Prerequisite
@@ -28,7 +31,7 @@ between workspaces.
 1. Export environment variables
    1. Terraform Cloud organization name as `TFVE_ORGANIZATION_NAME`
    1. Terraform Cloud token as `TFVE_TOKEN`
-1. Define variables to be exported to other workspaces. See
+1. Specify outputs to be exported to other workspaces. See
    [Below](#define-export-list) for details.
 
 ### Define export list
@@ -39,34 +42,32 @@ The list is specified in `Key-Value` format separated by a comma, where `Key`
 indicates the name of the output variable of the current Workspace and `Value`
 indicates the name of the variable at the destination.
 
-Note that only the variables listed in this list are exported, and the variable
-names can be the same value.
+Note that only the variables listed in this list are exported.
 
 **Example:**
 
-If you need to export the value of output such as below as
-`dynamodb_table_attribute`,
+If you need to export the value of output such as:
 
 ```terraform
-output "aws_dynamodb_table_attribute" {
-  description = "description"
-  value       = aws_dynamodb_table.rss.attribute
+output "my_output" {
+  description = "my output"
+  value       = "some value"
 }
 ```
 
-define the export list as follows:
+define the export list as follows.
 
 ```
-aws_dynamodb_table_attribute,dynamodb_table_attribute
+my_output,valiable_name_xyz
 ```
 
-Then the value of `aws_dynamodb_table_attribute` is created or updated as
-`dynamodb_table_attribute` at the targeted workspace(s).
+Then the value of `my_output` is created or updated as `valiable_name_xyz` at
+the targeted workspace(s).
 
 **NOTE:**
 
-- Updating is allowed with `--allow-update (-u)` flag.
-- To list outputs of current workspace, use `--show-outputs (-s)` flag.
+- Updating is allowed by using the `--allow-update (-u)` flag.
+- To show outputs of current workspace, use `--show-outputs (-s)` flag.
 
 ## Usage
 

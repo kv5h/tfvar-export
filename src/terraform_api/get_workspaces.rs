@@ -24,18 +24,18 @@ pub struct TerraformWorkspace {
 /// - Ref: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/projects#list-projects
 const TERRAFORM_API_QS_PAGE_SIZE: u8 = 100;
 
-/// Get Terraform projects and return HashMap of `Project ID: Project Name`.
+/// Get Terraform projects and return a HashMap of `Project ID: Project Name`.
 ///
 /// # Example
 ///
 /// ```rust
-/// let res: HashMap<String, String> =
-///     get_projects("https://app.terraform.io/api/v2", "ORG_NAME", "TOKEN")
-///         .await?;
+/// let res: HashMap<String, String> = get_projects(api_conn_prop).await?;
 /// ```
 pub async fn get_projects(
     api_conn_prop: &TerraformApiConnectionProperty,
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
+    let mut result = HashMap::new();
+
     let api_base_url = api_conn_prop.base_url();
     let organization_name = api_conn_prop.organization_name();
     let token = api_conn_prop.token();
@@ -54,7 +54,6 @@ pub async fn get_projects(
         .await?;
 
     let response_projects_val: serde_json::Value = serde_json::from_str(&response_projects)?;
-    let mut terraform_projects_map = HashMap::new();
     response_projects_val["data"]
         .as_array()
         .unwrap()
@@ -63,10 +62,10 @@ pub async fn get_projects(
             let terraform_project_id = val["id"].as_str().unwrap().to_string();
             let terraform_project_name = val["attributes"]["name"].as_str().unwrap().to_string();
 
-            terraform_projects_map.insert(terraform_project_id, terraform_project_name);
+            result.insert(terraform_project_id, terraform_project_name);
         });
 
-    Ok(terraform_projects_map)
+    Ok(result)
 }
 
 /// Get Terraform workspaces and return vector of `TerraformWorkspace` struct.
@@ -74,9 +73,7 @@ pub async fn get_projects(
 /// # Example
 ///
 /// ```rust
-/// let res: Vec<TerraformWorkspace> =
-///     get_workspaces("https://app.terraform.io/api/v2", "ORG_NAME", "TOKEN")
-///         .await?;
+/// let res: Vec<TerraformWorkspace> = get_workspaces(api_conn_prop).await?;
 /// ```
 pub async fn get_workspaces(
     api_conn_prop: &TerraformApiConnectionProperty,
