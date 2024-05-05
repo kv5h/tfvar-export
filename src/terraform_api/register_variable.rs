@@ -36,7 +36,7 @@ pub async fn update_variable(
     api_conn_prop: &TerraformApiConnectionProperty,
     terraform_variable_property: &Vec<TerraformVariableProperty>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let api_base_url = api_conn_prop.base_url();
+    let mut url = api_conn_prop.base_url().clone();
     let token = api_conn_prop.token();
     let workspace_id = api_conn_prop.workspace_id();
 
@@ -68,11 +68,11 @@ pub async fn update_variable(
           }});
         map.insert("data", data.to_string());
 
+        let path = format!("/api/v2/workspaces/{}/vars/{}", workspace_id, variable_id);
+        url.set_path(&path);
+
         let response = reqwest::Client::new()
-            .post(format!(
-                "{}/workspaces/{}/vars/{}",
-                api_base_url, workspace_id, variable_id
-            ))
+            .post(url.as_str())
             .header("Authorization", format!("Bearer {}", token))
             .header("Content-Type", "application/vnd.api+json")
             .json(&map)
@@ -87,7 +87,6 @@ pub async fn update_variable(
     }
 
     log::info!("Variables updated: {}.", count);
-    println!("Variables updated: {}.", count); // TODO:
 
     Ok(())
 }
@@ -99,9 +98,12 @@ pub async fn create_variable(
     api_conn_prop: &TerraformApiConnectionProperty,
     terraform_variable_property: &Vec<TerraformVariableProperty>,
 ) -> Result<Vec<TerraformVariableCreationResult>, Box<dyn std::error::Error>> {
-    let api_base_url = api_conn_prop.base_url();
+    let mut url = api_conn_prop.base_url().clone();
     let token = api_conn_prop.token();
     let workspace_id = api_conn_prop.workspace_id();
+
+    let path = format!("/api/v2/workspaces/{}/vars", workspace_id);
+    url.set_path(&path);
 
     let mut result = Vec::new();
 
@@ -132,7 +134,7 @@ pub async fn create_variable(
         map.insert("data", data.to_string());
 
         let response = reqwest::Client::new()
-            .post(format!("{}/workspaces/{}/vars", api_base_url, workspace_id))
+            .post(url.as_str())
             .header("Authorization", format!("Bearer {}", token))
             .header("Content-Type", "application/vnd.api+json")
             .body(data.to_string())
@@ -164,12 +166,15 @@ pub async fn check_variable_status(
     api_conn_prop: &TerraformApiConnectionProperty,
     target_variable_ids: &Vec<String>,
 ) -> Result<Vec<TerraformVariableStatus>, Box<dyn std::error::Error>> {
-    let api_base_url = api_conn_prop.base_url();
+    let mut url = api_conn_prop.base_url().clone();
     let token = api_conn_prop.token();
     let workspace_id = api_conn_prop.workspace_id();
 
+    let path = format!("/api/v2/workspaces/{}/vars",workspace_id );
+    url.set_path(&path);
+
     let response = reqwest::Client::new()
-        .get(format!("{}/workspaces/{}/vars", api_base_url, workspace_id))
+        .get(url.as_str())
         .header("Authorization", format!("Bearer {}", token))
         .header("Content-Type", "application/vnd.api+json")
         .send()
@@ -227,7 +232,7 @@ mod tests {
             .sample_string(&mut rand::thread_rng(), 32)
             .to_lowercase();
         let api_conn_prop = TerraformApiConnectionProperty::new(
-            Url::parse("https://app.terraform.io/api/v2").unwrap(),
+            Url::parse("https://app.terraform.io").unwrap(),
             None,
             env::var("TFVE_TOKEN").unwrap(),
             Some(env::var("TFVE_WORKSPACE_ID").unwrap().to_string()),
@@ -270,7 +275,7 @@ mod tests {
             .sample_string(&mut rand::thread_rng(), 32)
             .to_lowercase();
         let api_conn_prop = TerraformApiConnectionProperty::new(
-            Url::parse("https://app.terraform.io/api/v2").unwrap(),
+            Url::parse("https://app.terraform.io").unwrap(),
             None,
             env::var("TFVE_TOKEN").unwrap(),
             Some(env::var("TFVE_WORKSPACE_ID").unwrap().to_string()),

@@ -8,7 +8,7 @@ pub fn new_clap_command() -> clap::ArgMatches {
             Arg::new("base_url")
                 .short('b')
                 .long("base-url")
-                .default_value("https://app.terraform.io/api/v2")
+                .default_value("https://app.terraform.io")
                 .require_equals(false)
                 .required(false)
                 .value_name("BASE_URL")
@@ -23,10 +23,17 @@ pub fn new_clap_command() -> clap::ArgMatches {
         )
         .arg(
             Arg::new("show_outputs")
-                .short('s')
+                .short('o')
                 .long("show-outputs")
                 .action(ArgAction::SetTrue)
                 .help("Show a list of outputs and exit"),
+        )
+        .arg(
+            Arg::new("show_workspaces")
+                .short('w')
+                .long("show-workspaces")
+                .action(ArgAction::SetTrue)
+                .help("Show workspaces"),
         )
         .arg(
             Arg::new("allow_update")

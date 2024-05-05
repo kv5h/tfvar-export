@@ -1,18 +1,19 @@
-//! Get a list of Terraform workspaces.
+//! Get a list of Terraform Cloud workspaces.
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::terraform_api::connection_prop::TerraformApiConnectionProperty;
 
 /// Terraform Project info
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 struct TerraformProject {
     terraform_project_id: String,
     terraform_project_name: String,
 }
 
 /// Terraform Workspace info
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TerraformWorkspace {
     terraform_workspace_id: String,
     terraform_workspace_name: String,
@@ -26,7 +27,7 @@ const TERRAFORM_API_QS_PAGE_SIZE: u8 = 100;
 
 /// Get Terraform projects and return a HashMap of `Project ID: Project Name`.
 ///
-/// # Example
+/// ## Example
 ///
 /// ```rust
 /// let res: HashMap<String, String> = get_projects(api_conn_prop).await?;
@@ -36,15 +37,15 @@ pub async fn get_projects(
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
     let mut result = HashMap::new();
 
-    let api_base_url = api_conn_prop.base_url();
+    let mut url = api_conn_prop.base_url().clone();
     let organization_name = api_conn_prop.organization_name();
     let token = api_conn_prop.token();
 
+    let path = format!("/api/v2/organizations/{}/projects", organization_name);
+    url.set_path(&path);
+
     let response_projects = reqwest::Client::new()
-        .get(format!(
-            "{}/organizations/{}/projects",
-            api_base_url, organization_name
-        ))
+        .get(url.as_str())
         .header("Authorization", format!("Bearer {}", token))
         .header("Content-Type", "application/vnd.api+json")
         .query(&[("page[size]", TERRAFORM_API_QS_PAGE_SIZE)])
@@ -65,28 +66,34 @@ pub async fn get_projects(
             result.insert(terraform_project_id, terraform_project_name);
         });
 
+    log::info!("{} workspaces found.", result.len());
+
     Ok(result)
 }
 
 /// Get Terraform workspaces and return vector of `TerraformWorkspace` struct.
 ///
-/// # Example
+/// Using `--show-workspaces` flag prints workspaces with their associated project.
+///
+/// ## Example
 ///
 /// ```rust
-/// let res: Vec<TerraformWorkspace> = get_workspaces(api_conn_prop).await?;
+/// let res: Vec<TerraformWorkspace> =
+///     get_workspaces(false, api_conn_prop).await?;
 /// ```
 pub async fn get_workspaces(
+    show_workspaces: bool,
     api_conn_prop: &TerraformApiConnectionProperty,
 ) -> Result<Vec<TerraformWorkspace>, Box<dyn std::error::Error>> {
-    let api_base_url = api_conn_prop.base_url();
+    let mut url = api_conn_prop.base_url().clone();
     let organization_name = api_conn_prop.organization_name();
     let token = api_conn_prop.token();
 
+    let path = format!("/api/v2/organizations/{}/workspaces", organization_name);
+    url.set_path(&path);
+
     let response_workspaces = reqwest::Client::new()
-        .get(format!(
-            "{}/organizations/{}/workspaces",
-            api_base_url, organization_name
-        ))
+        .get(url.as_str())
         .header("Authorization", format!("Bearer {}", token))
         .header("Content-Type", "application/vnd.api+json")
         .query(&[("page[size]", TERRAFORM_API_QS_PAGE_SIZE)])
@@ -122,6 +129,12 @@ pub async fn get_workspaces(
                 },
             })
         });
+
+    log::info!("{} projects found.", terraform_workspaces.len());
+
+    if show_workspaces {
+        println!("{}", serde_json::to_string_pretty(&terraform_workspaces)?)
+    }
 
     Ok(terraform_workspaces)
 }

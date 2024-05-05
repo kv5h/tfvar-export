@@ -66,10 +66,12 @@ the targeted workspace(s).
 
 **NOTE:**
 
-- Updating is allowed by using the `--allow-update (-u)` flag.
-- To show outputs of current workspace, use `--show-outputs (-s)` flag.
+- Updating is allowed by using the `--allow-update` flag.
+- To show outputs of current workspace, use `--show-outputs` flag.
 
 ## Usage
+
+TODO:
 
 ```
 Usage: tfvar-export [OPTIONS] <PATH_TO_TFSTATE_FILE> <PATH_TO_EXPORT_LIST>
@@ -84,4 +86,39 @@ Options:
   -u, --allow-update         Allow update of the value when a variable already exists
   -h, --help                 Print help
   -V, --version              Print version
+```
+
+TODO: Add examples for each flag.
+
+### Output examples
+
+#### --show-outputs
+
+```json
+[
+  {
+    "terraform_workspace_id": "ws-xxxxxxxxxxxxxxxx",
+    "terraform_workspace_name": "ws-x",
+    "terraform_project": {
+      "terraform_project_id": "prj-xxxxxxxxxxxxxxxx",
+      "terraform_project_name": "pj-x"
+    }
+  },
+  {
+    "terraform_workspace_id": "ws-yyyyyyyyyyyyyyyy",
+    "terraform_workspace_name": "ws-y",
+    "terraform_project": {
+      "terraform_project_id": "prj-yyyyyyyyyyyyyyyy",
+      "terraform_project_name": "pj-y"
+    }
+  },
+  {
+    "terraform_workspace_id": "ws-zzzzzzzzzzzzzzzz",
+    "terraform_workspace_name": "ws-z",
+    "terraform_project": {
+      "terraform_project_id": "prj-zzzzzzzzzzzzzzzz",
+      "terraform_project_name": "pj-z"
+    }
+  }
+]
 ```
