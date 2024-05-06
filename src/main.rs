@@ -15,11 +15,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let clap = clap::new_clap_command();
     let base_url = clap.get_one::<String>("base_url").unwrap();
     let enable_info_log = clap.get_flag("enable_info_log");
-    let show_outputs = clap.get_flag("show_outputs"); // TODO: Show and quit
     let show_workspaces = clap.get_flag("show_workspaces"); // TODO: Show and quit
     let allow_update = clap.get_flag("allow_update");
-    let output_values_file = clap.get_one::<String>("output_values_file").unwrap();
-    let export_list = clap.get_one::<String>("export_list").unwrap();
+    let output_values_file = clap.try_get_one::<String>("output_values_file").unwrap();
+    let export_list = clap.try_get_one::<String>("export_list").unwrap();
 
     // Log
     let mut builder = env_logger::Builder::new();
@@ -47,12 +46,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let _workspaces = get_workspaces(show_workspaces, &api_conn_prop).await?;
 
-    get_outputs(show_outputs, &output_values_file)?;
+    if let Some(x) = output_values_file {
+        get_outputs(x)?;
+    }
 
-    let el = read_export_list(&export_list).unwrap();
-    el.unwrap().iter().for_each(|(k, v)| {
-        println!("{} : {}", k, v);
-    });
+    if let Some(x) = export_list {
+        let el = read_export_list(x).unwrap();
+        el.unwrap().iter().for_each(|(k, v)| {
+            // println!("{} : {}", k, v);
+        });
+    }
 
     Ok(())
 }

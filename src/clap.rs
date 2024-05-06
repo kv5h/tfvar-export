@@ -15,46 +15,67 @@ pub fn new_clap_command() -> clap::ArgMatches {
                 .help("Base URL of Terraform API"),
         )
         .arg(
+            Arg::new("target_workspaces")
+                .short('t')
+                .long("target-workspaces")
+                .require_equals(false)
+                .required(false)
+                .required_unless_present("show_workspaces")
+                .value_name("WORKSPACE_NAME1,WORKSPACE_NAME2,...")
+                .help(
+                    "Comma separated Terraform Cloud workspace names.\nRequired unless \
+                     `--show-workspaces` is set.",
+                ),
+        )
+        .arg(
             Arg::new("enable_info_log")
                 .short('l')
                 .long("info-log")
                 .action(ArgAction::SetTrue)
-                .help("Enable `Info` log"),
-        )
-        .arg(
-            Arg::new("show_outputs")
-                .short('o')
-                .long("show-outputs")
-                .action(ArgAction::SetTrue)
-                .help("Show a list of outputs and exit"),
+                .help(
+                    "Enable `Info` log.\nNote that `Error` log is always enabled regardless of \
+                     this flag.",
+                ),
         )
         .arg(
             Arg::new("show_workspaces")
                 .short('w')
+                .conflicts_with_all([
+                    "export_list",
+                    "target_workspaces",
+                    "allow_update",
+                    "output_values_file",
+                    "export_list",
+                ])
                 .long("show-workspaces")
                 .action(ArgAction::SetTrue)
-                .help("Show workspaces"),
+                .help("Show available workspaces."),
         )
         .arg(
             Arg::new("allow_update")
                 .short('u')
                 .long("allow-update")
                 .action(ArgAction::SetTrue)
-                .help("Allow update of the value when a variable already exists"),
+                .help("Allow update of existing values."),
         )
         .arg(
             Arg::new("output_values_file")
                 .index(1)
-                .required(true)
+                .required(false)
+                .required_unless_present("show_workspaces")
                 .value_name("PATH_TO_OUTPUT_VALUES_FILE")
-                .help("Path to output values file generated with `terraform output --json`"),
+                .help(
+                    "Path to output values file generated with `terraform output \
+                     --json`.\nRequired unless `--show-workspaces` is set.",
+                ),
         )
         .arg(
             Arg::new("export_list")
                 .index(2)
-                .required(true)
+                .required(false)
+                .required_unless_present("show_workspaces")
                 .value_name("PATH_TO_EXPORT_LIST")
-                .help("Path to export list"),
+                .help("Path to export list.\nRequired unless `--show-workspaces` is set."),
         )
         .get_matches()
 }

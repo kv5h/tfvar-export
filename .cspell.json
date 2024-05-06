@@ -8,6 +8,7 @@
         "ratelimiter",
         "reqwest",
         "streetsidesoftware",
+        "tfvar",
         "tfve",
         "tsmerge",
         "visualstudio",
