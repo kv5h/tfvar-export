@@ -1,5 +1,6 @@
 mod clap;
 mod get_outputs;
+mod read_list;
 mod terraform_api;
 
 use crate::get_outputs::get_outputs;
@@ -15,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let enable_info_log = clap.get_flag("enable_info_log");
     let show_output = clap.get_flag("show_outputs"); // TODO: Show and quit
     let show_workspaces = clap.get_flag("show_workspaces"); // TODO: Show and quit
-    let tfstate_file = clap.get_one::<String>("tfstate_file").unwrap();
+    let output_values_file = clap.get_one::<String>("output_values_file").unwrap();
 
     // Log
     let mut builder = env_logger::Builder::new();
@@ -34,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let _workspaces = get_workspaces(show_workspaces, &api_conn_prop).await?;
 
-    get_outputs(show_output, &tfstate_file)?;
+    get_outputs(show_output, &output_values_file)?;
 
     Ok(())
 }

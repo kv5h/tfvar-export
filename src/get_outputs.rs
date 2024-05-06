@@ -1,11 +1,11 @@
-//! Read tfstate and return outputs.
+//! Read output values file and return outputs.
 
 use std::io::prelude::*;
 use std::io::BufReader;
 
 #[derive(Debug, PartialEq, Eq)]
-/// Struct of output in tfstate
-pub struct TfstateOutput {
+/// Struct of output value
+pub struct OutputValue {
     name: String,
     value: serde_json::Value,
 }
@@ -55,27 +55,27 @@ pub struct TfstateOutput {
 pub fn get_outputs(
     show_output: bool,
     file_path: &str,
-) -> Result<Vec<TfstateOutput>, Box<dyn std::error::Error>> {
-    let tfstate = std::fs::File::open(file_path)?;
-    let mut buf_reader = BufReader::new(tfstate);
+) -> Result<Vec<OutputValue>, Box<dyn std::error::Error>> {
+    let output_values_file = std::fs::File::open(file_path)?;
+    let mut buf_reader = BufReader::new(output_values_file);
     let mut contents = String::new();
     buf_reader.read_to_string(&mut contents)?;
 
     let contents_json: serde_json::Value = serde_json::from_str(&contents)?;
-    let tfstate_outputs: Vec<TfstateOutput> = contents_json
+    let output_values: Vec<OutputValue> = contents_json
         .as_object()
         .unwrap()
         .into_iter()
         .filter(|val| val.1["sensitive"] == false) // Opt out `sensitive` elements.
-        .map(|val| TfstateOutput {
+        .map(|val| OutputValue {
             name: val.0.to_string(),
             value: val.1["value"].clone(),
         })
         .collect();
 
     if show_output {
-        println!("Number of outputs: {}.", tfstate_outputs.len());
-        tfstate_outputs.iter().enumerate().for_each(|(idx, val)| {
+        println!("Number of outputs: {}.", output_values.len());
+        output_values.iter().enumerate().for_each(|(idx, val)| {
             println!(
                 "--- {} ---\nname : {}\nvalue: {}",
                 idx + 1,
@@ -85,7 +85,7 @@ pub fn get_outputs(
         });
     }
 
-    Ok(tfstate_outputs)
+    Ok(output_values)
 }
 
 #[cfg(test)]
@@ -98,43 +98,43 @@ mod tests {
         let test_file = "files/test/outputs.json";
         let res = get_outputs(false, &test_file).unwrap();
         assert_eq!(res, vec![
-            TfstateOutput {
+            OutputValue {
                 name: String::from("bool"),
                 value: json!(false),
             },
-            TfstateOutput {
+            OutputValue {
                 name: String::from("list_of_object"),
                 value: json!({"a":"aaa","b":"bbb","c":null}),
             },
-            TfstateOutput {
+            OutputValue {
                 name: String::from("map_of_string"),
                 value: json!({"a":"aaa","b":"bbb","c":"ccc"}),
             },
-            TfstateOutput {
+            OutputValue {
                 name: String::from("number_0"),
                 value: json!(0),
             },
-            TfstateOutput {
+            OutputValue {
                 name: String::from("number_float"),
                 value: json!(1.2345),
             },
-            TfstateOutput {
+            OutputValue {
                 name: String::from("number_negative"),
                 value: json!(-1.2345),
             },
-            TfstateOutput {
+            OutputValue {
                 name: String::from("set_of_object"),
                 value: json!([{"name":"aaa","type":"bbb"}]),
             },
-            TfstateOutput {
+            OutputValue {
                 name: String::from("string"),
                 value: json!("aaa"),
             },
-            TfstateOutput {
+            OutputValue {
                 name: String::from("string_with_quote"),
                 value: json!("aaa\"bbb"),
             },
-            TfstateOutput {
+            OutputValue {
                 name: String::from("tuple"),
                 value: json!(["aaa", "bbb"]),
             },

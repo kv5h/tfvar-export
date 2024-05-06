@@ -43,11 +43,11 @@ pub fn new_clap_command() -> clap::ArgMatches {
                 .help("Allow update of the value when a variable already exists"),
         )
         .arg(
-            Arg::new("tfstate_file")
+            Arg::new("output_values_file")
                 .index(1)
                 .required(true)
-                .value_name("PATH_TO_TFSTATE_FILE")
-                .help("Path to tfstate file"),
+                .value_name("PATH_TO_OUTPUT_VALUES_FILE")
+                .help("Path to output values file generated with `terraform output --json`"),
         )
         .arg(
             Arg::new("export_list")
