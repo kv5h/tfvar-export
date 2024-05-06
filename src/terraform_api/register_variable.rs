@@ -257,6 +257,53 @@ mod tests {
     use chrono::Local;
     use rand::distributions::{Alphanumeric, DistString};
 
+    // Function for deleting test data
+    // Call on demand.
+    async fn delete_variable(
+        api_conn_prop: &TerraformApiConnectionProperty,
+        variable_ids: &Vec<String>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut url = api_conn_prop.base_url().clone();
+        let token = api_conn_prop.token();
+        let workspace_id = api_conn_prop.workspace_id();
+
+        // Limit the rate 20 requests per second.
+        let ratelimiter = ratelimit::Ratelimiter::builder(20, std::time::Duration::from_secs(1))
+            .max_tokens(20)
+            .initial_available(20)
+            .build()
+            .unwrap();
+
+        let count = variable_ids.len();
+        for i in 0..count {
+            if let Err(sleep) = ratelimiter.try_wait() {
+                std::thread::sleep(sleep);
+                continue;
+            }
+
+            let variable_id = &variable_ids.get(i).expect("Failed to get variable_id.");
+            let path = format!("/api/v2/workspaces/{}/vars/{}", workspace_id, variable_id);
+            url.set_path(&path);
+
+            let response = reqwest::Client::new()
+                .delete(url.as_str())
+                .header("Authorization", format!("Bearer {}", token))
+                .header("Content-Type", "application/vnd.api+json")
+                .send()
+                .await?;
+
+            assert!(
+                response.status() == 204,
+                "Response status is {}.",
+                response.status()
+            );
+
+            println!("Temporarily created variable deleted: {}.", variable_id);
+        }
+
+        Ok(())
+    }
+
     #[tokio::test]
     async fn test_check_variable_status() {
         let var_1 = Alphanumeric
@@ -329,6 +376,8 @@ mod tests {
             json!({"bool":{"sensitive":false,"type":"bool","value":false},"list_of_object":{"sensitive":false,"type":["object",{"a":"string","b":"string","c":"string"}],"value":{"a":"aaa","b":"bbb","c":null}},"map_of_string":{"sensitive":false,"type":["map","string"],"value":{"a":"aaa","b":"bbb","c":"ccc"}},"number_0":{"sensitive":false,"type":"number","value":0},"number_float":{"sensitive":false,"type":"number","value":1.2345},"number_negative":{"sensitive":false,"type":"number","value":-1.2345},"sensitive":{"sensitive":true,"type":"string","value":"**************"},"set_of_object":{"sensitive":false,"type":["set",["object",{"name":"string","type":"string"}]],"value":[{"name":"aaa","type":"bbb"}]},"string":{"sensitive":false,"type":"string","value":"aaa"},"string_with_quote":{"sensitive":false,"type":"string","value":"aaa\"bbb"},"tuple":{"sensitive":false,"type":["tuple",["string","string"]],"value":["aaa","bbb"]}}
             ), // complex
         ];
+
+        let mut variable_ids = Vec::new();
         for case in cases.iter() {
             let date = Local::now();
             let val = Alphanumeric
@@ -355,6 +404,10 @@ mod tests {
                 &serde_json::from_str::<serde_json::Value>(&res[0].value.to_string()).unwrap(),
                 case
             );
+
+            variable_ids.push(status[0].variable_id.clone());
         }
+        // Delete test data
+        delete_variable(&api_conn_prop, &variable_ids).await.unwrap();
     }
 }
