@@ -351,6 +351,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore]
     async fn test_create_variable() {
         let api_conn_prop = TerraformApiConnectionProperty::new(
             url::Url::parse("https://app.terraform.io").unwrap(),

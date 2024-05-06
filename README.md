@@ -59,6 +59,8 @@ define the export list as follows.
 
 ```
 my_output,valiable_name_xyz
+
+# This line will be ignored as a comment.
 ```
 
 Then the value of `my_output` is created or updated as `valiable_name_xyz` at
@@ -68,6 +70,7 @@ the targeted workspace(s).
 
 - Updating is allowed by using the `--allow-update` flag.
 - To show outputs of current workspace, use `--show-outputs` flag.
+- You can use `#` to comment out a whole line.
 
 ## Usage
 
