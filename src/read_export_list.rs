@@ -1,8 +1,9 @@
 //! Read output values file and return outputs.
 
-use std::collections::HashMap;
-use std::io::prelude::*;
-use std::io::BufReader;
+use std::{
+    collections::HashMap,
+    io::{prelude::*, BufReader},
+};
 
 pub fn read_export_list(
     file_path: &str,

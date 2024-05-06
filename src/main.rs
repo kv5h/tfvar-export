@@ -5,9 +5,13 @@ mod terraform_api;
 
 use read_export_list::read_export_list;
 
-use crate::get_outputs::get_outputs;
-use crate::terraform_api::connection_prop::TerraformApiConnectionProperty;
-use crate::terraform_api::get_workspaces::get_workspaces;
+use crate::{
+    get_outputs::get_outputs,
+    terraform_api::{
+        connection_prop::TerraformApiConnectionProperty,
+        get_workspaces::get_workspaces,
+    },
+};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

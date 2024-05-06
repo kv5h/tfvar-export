@@ -70,8 +70,9 @@ pub async fn check_variable_status(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rand::distributions::{Alphanumeric, DistString};
+
+    use super::*;
 
     #[tokio::test]
     async fn test_check_variable_status() {

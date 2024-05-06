@@ -1,7 +1,8 @@
 //! Get a list of Terraform Cloud workspaces.
 
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 
 use crate::terraform_api::connection_prop::TerraformApiConnectionProperty;
 

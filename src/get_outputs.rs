@@ -1,7 +1,6 @@
 //! Read output values file and return outputs.
 
-use std::io::prelude::*;
-use std::io::BufReader;
+use std::io::{prelude::*, BufReader};
 
 #[derive(Debug, PartialEq, Eq)]
 /// Struct of output value
@@ -38,8 +37,9 @@ pub fn get_outputs(file_path: &str) -> Result<Vec<OutputValue>, Box<dyn std::err
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn test_get_outputs() {

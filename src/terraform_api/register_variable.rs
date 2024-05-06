@@ -2,8 +2,9 @@
 //!
 //! **API Reference:** https://developer.hashicorp.com/terraform/cloud-docs/api-docs/workspace-variables
 
-use serde_json::json;
 use std::collections::HashMap;
+
+use serde_json::json;
 
 use crate::terraform_api::connection_prop::TerraformApiConnectionProperty;
 
@@ -197,9 +198,10 @@ pub async fn create_variable(
 
 #[cfg(test)]
 mod tests {
+    use rand::distributions::{Alphanumeric, DistString};
+
     use super::*;
     use crate::terraform_api::check_variable_status::check_variable_status;
-    use rand::distributions::{Alphanumeric, DistString};
 
     // Function for deleting test data
     // Call on demand.
