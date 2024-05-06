@@ -30,10 +30,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     builder.init();
 
     let api_conn_prop = TerraformApiConnectionProperty::new(
-        url::Url::parse(&base_url)?,
-        Some(std::env::var("TFVE_ORGANIZATION_NAME").unwrap()),
-        std::env::var("TFVE_TOKEN").unwrap(),
-        Some(std::env::var("TFVE_WORKSPACE_ID").unwrap()),
+        url::Url::parse(&base_url).expect("Failed to parse `base_url`."),
+        Some(std::env::var("TFVE_ORGANIZATION_NAME").expect(&format!(
+            "Failed to read an environment variable `{}`.",
+            "TFVE_ORGANIZATION_NAME"
+        ))),
+        std::env::var("TFVE_TOKEN").expect(&format!(
+            "Failed to read an environment variable `{}`.",
+            "TFVE_TOKEN"
+        )),
+        Some(std::env::var("TFVE_WORKSPACE_ID").expect(&format!(
+            "Failed to read an environment variable `{}`.",
+            "TFVE_WORKSPACE_ID"
+        ))),
     );
 
     let _workspaces = get_workspaces(show_workspaces, &api_conn_prop).await?;
