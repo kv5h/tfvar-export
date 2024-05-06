@@ -74,21 +74,32 @@ the targeted workspace(s).
 
 ## Usage
 
-TODO:
-
 ```
-Usage: tfvar-export [OPTIONS] <PATH_TO_TFSTATE_FILE> <PATH_TO_EXPORT_LIST>
+Usage: tfvar-export [OPTIONS] [PATH_TO_OUTPUT_VALUES_FILE] [PATH_TO_EXPORT_LIST]
 
 Arguments:
-  <PATH_TO_TFSTATE_FILE>  Path to tfstate file
-  <PATH_TO_EXPORT_LIST>   Path to export list
+  [PATH_TO_OUTPUT_VALUES_FILE]  Path to output values file generated with `terraform output --json`.
+                                Required unless `--show-workspaces` is set.
+  [PATH_TO_EXPORT_LIST]         Path to export list.
+                                Required unless `--show-workspaces` is set.
 
 Options:
-  -b, --base-url <BASE_URL>  Base URL of Terraform API [default: https://app.terraform.io/api/v2]
-  -s, --show-outputs         Show list of Output and exit
-  -u, --allow-update         Allow update of the value when a variable already exists
-  -h, --help                 Print help
-  -V, --version              Print version
+  -b, --base-url <BASE_URL>
+          Base URL of Terraform API [default: https://app.terraform.io]
+  -t, --target-workspaces <WORKSPACE_NAME1,WORKSPACE_NAME2,...>
+          Comma separated Terraform Cloud workspace names.
+          Required unless `--show-workspaces` is set.
+  -l, --info-log
+          Enable `Info` log.
+          Note that `Error` log is always enabled regardless of this flag.
+  -w, --show-workspaces
+          Show available workspaces.
+  -u, --allow-update
+          Allow update of existing values.
+  -h, --help
+          Print help
+  -V, --version
+          Print version
 ```
 
 TODO: Add examples for each flag.
