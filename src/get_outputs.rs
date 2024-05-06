@@ -15,47 +15,7 @@ pub struct OutputValue {
 /// ## Remark
 ///
 /// - `sensitive` outputs are ignored for security reason.
-/// - Setting `show_output` to `true` displays a list of outputs on stdout.
-///
-/// ## Output example
-///
-/// ```text
-/// Number of outputs: 10.
-/// --- 1 ---
-/// name : bool
-/// value: false
-/// --- 2 ---
-/// name : list_of_object
-/// value: {"a":"aaa","b":"bbb","c":null}
-/// --- 3 ---
-/// name : map_of_string
-/// value: {"a":"aaa","b":"bbb","c":"ccc"}
-/// --- 4 ---
-/// name : number_0
-/// value: 0
-/// --- 5 ---
-/// name : number_float
-/// value: 1.2345
-/// --- 6 ---
-/// name : number_negative
-/// value: -1.2345
-/// --- 7 ---
-/// name : set_of_object
-/// value: [{"name":"aaa","type":"bbb"}]
-/// --- 8 ---
-/// name : string
-/// value: "aaa"
-/// --- 9 ---
-/// name : string_with_quote
-/// value: "aaa\"bbb"
-/// --- 10 ---
-/// name : tuple
-/// value: ["aaa","bbb"]
-/// ```
-pub fn get_outputs(
-    show_output: bool,
-    file_path: &str,
-) -> Result<Vec<OutputValue>, Box<dyn std::error::Error>> {
+pub fn get_outputs(file_path: &str) -> Result<Vec<OutputValue>, Box<dyn std::error::Error>> {
     let output_values_file = std::fs::File::open(file_path)?;
     let mut buf_reader = BufReader::new(output_values_file);
     let mut contents = String::new();
@@ -73,18 +33,6 @@ pub fn get_outputs(
         })
         .collect();
 
-    if show_output {
-        println!("Number of outputs: {}.", output_values.len());
-        output_values.iter().enumerate().for_each(|(idx, val)| {
-            println!(
-                "--- {} ---\nname : {}\nvalue: {}",
-                idx + 1,
-                val.name,
-                val.value,
-            );
-        });
-    }
-
     Ok(output_values)
 }
 
@@ -96,7 +44,7 @@ mod tests {
     #[test]
     fn test_get_outputs() {
         let test_file = "files/test/outputs.json";
-        let res = get_outputs(false, &test_file).unwrap();
+        let res = get_outputs(&test_file).unwrap();
         assert_eq!(res, vec![
             OutputValue {
                 name: String::from("bool"),
