@@ -2,9 +2,10 @@ number_float,number_float_copy
 
 
 # ignored as a comment
-set_of_object,set_of_object_copy
+          # ugly line...
+          set_of_object,set_of_object_copy
 
-# ignored as a comment
+           # ignored as a comment (even ugly line)
 
 
 

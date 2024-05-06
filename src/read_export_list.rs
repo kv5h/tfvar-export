@@ -21,9 +21,10 @@ pub fn read_export_list(
         return Ok(None);
     }
 
-    while let Some(line) = lines.next() {
-        if line.trim().is_empty() || line.starts_with("#") {
-            // Skip an empty line and a comment line
+    while let Some(mut line) = lines.next() {
+        line = line.trim();
+        if line.is_empty() || line.starts_with("#") {
+            // Skip an empty or a comment line
             continue;
         }
         let record: Vec<String> = line.split(',').map(|val| val.to_string()).collect();
