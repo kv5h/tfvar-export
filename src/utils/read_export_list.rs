@@ -5,6 +5,7 @@ use std::{
     io::{prelude::*, BufReader},
 };
 
+/// Read export list and return a HashMap of `source val name : dest val name``
 pub fn read_export_list(
     file_path: &str,
 ) -> Result<Option<HashMap<String, String>>, Box<dyn std::error::Error>> {

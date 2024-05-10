@@ -1,31 +1,34 @@
 //! Checks the status of Terraform variables.
 
+use std::collections::HashMap;
+
 use crate::terraform_api::connection_prop::TerraformApiConnectionProperty;
 
 /// Terraform variable status
 #[derive(Debug, Eq, PartialEq)]
 pub struct TerraformVariableStatus {
-    already_exist: bool,
     variable_id: String,
+    variable_name: Option<String>,
 }
 
 impl TerraformVariableStatus {
-    pub fn get_already_exist(&self) -> &bool {
-        &self.already_exist
-    }
-
     pub fn get_variable_id(&self) -> &str {
         &self.variable_id
     }
+
+    pub fn get_variable_name(&self) -> &Option<String> {
+        &self.variable_name
+    }
 }
 
+/// Checks specified variables are already exist or not.
 pub async fn check_variable_status(
+    workspace_id: &str,
     api_conn_prop: &TerraformApiConnectionProperty,
     target_variable_ids: &Vec<String>,
 ) -> Result<Vec<TerraformVariableStatus>, Box<dyn std::error::Error>> {
     let mut url = api_conn_prop.base_url().clone();
     let token = api_conn_prop.token();
-    let workspace_id = api_conn_prop.workspace_id();
 
     let path = format!("/api/v2/workspaces/{}/vars", workspace_id);
     url.set_path(&path);
@@ -39,27 +42,31 @@ pub async fn check_variable_status(
         .text()
         .await?;
 
-    let mut vars_already_exist = Vec::new();
-    let response_jv: serde_json::Value = serde_json::from_str(&response)?;
-    response_jv["data"]
+    //  `(name, id)` of existing variables
+    let mut vars_already_exist = HashMap::new();
+    let response_json_value: serde_json::Value = serde_json::from_str(&response)?;
+    response_json_value["data"]
         .as_array()
         .unwrap()
         .into_iter()
         .for_each(|val| {
-            vars_already_exist.push(val["id"].as_str().unwrap().to_string());
+            vars_already_exist.insert(
+                val["id"].as_str().unwrap().to_string(),
+                val["attributes"]["key"].as_str().unwrap().to_string(),
+            );
         });
 
     let mut result = Vec::new();
     target_variable_ids
         .iter()
-        .for_each(|val| match vars_already_exist.contains(val) {
-            true => result.push(TerraformVariableStatus {
-                already_exist: true,
+        .for_each(|val| match vars_already_exist.get(val) {
+            Some(name) => result.push(TerraformVariableStatus {
                 variable_id: val.to_string(),
+                variable_name: Some(name.to_owned()),
             }),
-            false => result.push(TerraformVariableStatus {
-                already_exist: false,
+            None => result.push(TerraformVariableStatus {
                 variable_id: val.to_string(),
+                variable_name: None,
             }),
         });
 
@@ -71,51 +78,78 @@ pub async fn check_variable_status(
 #[cfg(test)]
 mod tests {
     use rand::distributions::{Alphanumeric, DistString};
+    use serde_json::json;
 
     use super::*;
+    use crate::terraform_api::register_variable::{create_variable, TerraformVariableProperty};
 
     #[tokio::test]
     async fn test_check_variable_status() {
+        // Should NOT exist
         let var_1 = Alphanumeric
             .sample_string(&mut rand::thread_rng(), 32)
             .to_lowercase();
+        // Should exist
         let var_2 = Alphanumeric
             .sample_string(&mut rand::thread_rng(), 32)
             .to_lowercase();
+        // Should NOT exist
         let var_3 = Alphanumeric
             .sample_string(&mut rand::thread_rng(), 32)
             .to_lowercase();
+        // Should exist
+        let var_4 = Alphanumeric
+            .sample_string(&mut rand::thread_rng(), 32)
+            .to_lowercase();
+        // Should NOT exist
+        let var_5 = Alphanumeric
+            .sample_string(&mut rand::thread_rng(), 32)
+            .to_lowercase();
+
         let api_conn_prop = TerraformApiConnectionProperty::new(
             url::Url::parse("https://app.terraform.io").unwrap(),
-            None,
             std::env::var("TFVE_TOKEN").unwrap(),
-            Some(std::env::var("TFVE_WORKSPACE_ID").unwrap().to_string()),
         );
-        let res = check_variable_status(&api_conn_prop, &vec![
+        let workspace_id = &std::env::var("TFVE_WORKSPACE_ID_TESTING")
+            .expect("Environment variable `TFVE_WORKSPACE_ID_TESTING` required.");
+
+        let _ = create_variable(workspace_id, &api_conn_prop, &vec![
+            TerraformVariableProperty::new(None, var_2.clone(), json!(var_2)),
+            TerraformVariableProperty::new(None, var_4.clone(), json!(var_4)),
+        ])
+        .await
+        .unwrap();
+
+        let res = check_variable_status(workspace_id, &api_conn_prop, &vec![
             var_1.clone(),
-            "var-Tppa4XRHcAt7qniZ".to_string(),
             var_2.clone(),
             var_3.clone(),
+            var_4.clone(),
+            var_5.clone(),
         ])
         .await
         .unwrap();
 
         assert_eq!(res, vec![
             TerraformVariableStatus {
-                already_exist: false,
                 variable_id: var_1,
+                variable_name: None
             },
             TerraformVariableStatus {
-                already_exist: true,
-                variable_id: "var-Tppa4XRHcAt7qniZ".to_string(),
+                variable_id: var_2.clone(),
+                variable_name: Some(var_2)
             },
             TerraformVariableStatus {
-                already_exist: false,
-                variable_id: var_2,
-            },
-            TerraformVariableStatus {
-                already_exist: false,
                 variable_id: var_3,
+                variable_name: None
+            },
+            TerraformVariableStatus {
+                variable_id: var_4.clone(),
+                variable_name: Some(var_4)
+            },
+            TerraformVariableStatus {
+                variable_id: var_5,
+                variable_name: None
             },
         ])
     }

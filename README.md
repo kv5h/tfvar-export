@@ -30,8 +30,9 @@ between workspaces.
 
 1. Export environment variables
    1. Terraform Cloud organization name as `TFVE_ORGANIZATION_NAME`
-   1. Terraform Cloud token as `TFVE_TOKEN`
-1. Specify outputs to be exported to other workspaces. See
+      1. Required if `--show-workspaces` is specified.
+   2. Terraform Cloud token as `TFVE_TOKEN`
+2. Specify outputs to be exported to other workspaces. See
    [Below](#define-export-list) for details.
 
 ### Define export list
@@ -136,3 +137,8 @@ TODO: Add examples for each flag.
   }
 ]
 ```
+
+## Testing
+
+- Set the `TFVE_WORKSPACE_ID_TESTING` environment variable.
+  - You should use a testing dedicated workspace for safety.

@@ -9,6 +9,16 @@ pub struct OutputValue {
     value: serde_json::Value,
 }
 
+impl OutputValue {
+    pub fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn get_value(&self) -> &serde_json::Value {
+        &self.value
+    }
+}
+
 /// Read outputs from a file generated with `terraform output --json`.
 ///
 /// ## Remark

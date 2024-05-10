@@ -21,25 +21,27 @@ pub struct TerraformWorkspace {
     terraform_project: TerraformProject,
 }
 
+impl TerraformWorkspace {
+    pub fn get_workspace_id(&self) -> &str {
+        &self.terraform_workspace_id
+    }
+
+    pub fn get_workspace_name(&self) -> &str {
+        &self.terraform_workspace_name
+    }
+}
+
 /// Max element numbers per page.
 /// - TODO: If your case exceeds this, additional implementations are required.
 /// - Ref: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/projects#list-projects
 const TERRAFORM_API_QS_PAGE_SIZE: u8 = 100;
 
 /// Get Terraform projects and return a HashMap of `Project ID: Project Name`.
-///
-/// ## Example
-///
-/// ```rust
-/// let res: HashMap<String, String> = get_projects(api_conn_prop).await?;
-/// ```
 pub async fn get_projects(
+    organization_name: &str,
     api_conn_prop: &TerraformApiConnectionProperty,
 ) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
-    let mut result = HashMap::new();
-
     let mut url = api_conn_prop.base_url().clone();
-    let organization_name = api_conn_prop.organization_name();
     let token = api_conn_prop.token();
 
     let path = format!("/api/v2/organizations/{}/projects", organization_name);
@@ -55,6 +57,7 @@ pub async fn get_projects(
         .text()
         .await?;
 
+    let mut result = HashMap::new();
     let response_projects_val: serde_json::Value = serde_json::from_str(&response_projects)?;
     response_projects_val["data"]
         .as_array()
@@ -84,10 +87,10 @@ pub async fn get_projects(
 /// ```
 pub async fn get_workspaces(
     show_workspaces: bool,
+    organization_name: &str,
     api_conn_prop: &TerraformApiConnectionProperty,
 ) -> Result<Vec<TerraformWorkspace>, Box<dyn std::error::Error>> {
     let mut url = api_conn_prop.base_url().clone();
-    let organization_name = api_conn_prop.organization_name();
     let token = api_conn_prop.token();
 
     let path = format!("/api/v2/organizations/{}/workspaces", organization_name);
@@ -103,9 +106,10 @@ pub async fn get_workspaces(
         .text()
         .await?;
 
+    // List workspaces and then get workspace to map a workspace and its project.
     let response_workspaces_val: serde_json::Value = serde_json::from_str(&response_workspaces)?;
     let mut terraform_workspaces = Vec::new();
-    let terraform_projects_map = get_projects(api_conn_prop).await?;
+    let terraform_projects_map = get_projects(organization_name, api_conn_prop).await?;
     response_workspaces_val["data"]
         .as_array()
         .unwrap()
