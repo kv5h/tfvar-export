@@ -7,17 +7,17 @@ use crate::terraform_api::connection_prop::TerraformApiConnectionProperty;
 /// Terraform variable status
 #[derive(Debug, Eq, PartialEq)]
 pub struct TerraformVariableStatus {
-    variable_id: String,
-    variable_name: Option<String>,
+    variable_name: String,
+    variable_id: Option<String>,
 }
 
 impl TerraformVariableStatus {
-    pub fn get_variable_id(&self) -> &str {
-        &self.variable_id
+    pub fn get_variable_name(&self) -> &str {
+        &self.variable_name
     }
 
-    pub fn get_variable_name(&self) -> &Option<String> {
-        &self.variable_name
+    pub fn get_variable_id(&self) -> &Option<String> {
+        &self.variable_id
     }
 }
 
@@ -25,7 +25,7 @@ impl TerraformVariableStatus {
 pub async fn check_variable_status(
     workspace_id: &str,
     api_conn_prop: &TerraformApiConnectionProperty,
-    target_variable_ids: &Vec<String>,
+    target_variable_names: &Vec<String>,
 ) -> Result<Vec<TerraformVariableStatus>, Box<dyn std::error::Error>> {
     let mut url = api_conn_prop.base_url().clone();
     let token = api_conn_prop.token();
@@ -43,30 +43,30 @@ pub async fn check_variable_status(
         .await?;
 
     //  `(name, id)` of existing variables
-    let mut vars_already_exist = HashMap::new();
+    let mut existing_variables = HashMap::new();
     let response_json_value: serde_json::Value = serde_json::from_str(&response)?;
     response_json_value["data"]
         .as_array()
         .unwrap()
         .into_iter()
         .for_each(|val| {
-            vars_already_exist.insert(
-                val["id"].as_str().unwrap().to_string(),
+            existing_variables.insert(
                 val["attributes"]["key"].as_str().unwrap().to_string(),
+                val["id"].as_str().unwrap().to_string(),
             );
         });
 
-    let mut result = Vec::new();
-    target_variable_ids
+    let mut result: Vec<TerraformVariableStatus> = Vec::new();
+    target_variable_names
         .iter()
-        .for_each(|val| match vars_already_exist.get(val) {
-            Some(name) => result.push(TerraformVariableStatus {
-                variable_id: val.to_string(),
-                variable_name: Some(name.to_owned()),
+        .for_each(|val_name| match existing_variables.get(val_name) {
+            Some(val_id) => result.push(TerraformVariableStatus {
+                variable_name: val_name.to_owned(),
+                variable_id: Some(val_id.to_owned()),
             }),
             None => result.push(TerraformVariableStatus {
-                variable_id: val.to_string(),
-                variable_name: None,
+                variable_name: val_name.to_owned(),
+                variable_id: None,
             }),
         });
 
@@ -81,7 +81,11 @@ mod tests {
     use serde_json::json;
 
     use super::*;
-    use crate::terraform_api::register_variable::{create_variable, TerraformVariableProperty};
+    use crate::terraform_api::register_variable::{
+        create_variable,
+        tests::delete_variable,
+        TerraformVariableProperty,
+    };
 
     #[tokio::test]
     async fn test_check_variable_status() {
@@ -113,7 +117,7 @@ mod tests {
         let workspace_id = &std::env::var("TFVE_WORKSPACE_ID_TESTING")
             .expect("Environment variable `TFVE_WORKSPACE_ID_TESTING` required.");
 
-        let _ = create_variable(workspace_id, &api_conn_prop, &vec![
+        let create_result = create_variable(workspace_id, &api_conn_prop, &vec![
             TerraformVariableProperty::new(None, var_2.clone(), json!(var_2)),
             TerraformVariableProperty::new(None, var_4.clone(), json!(var_4)),
         ])
@@ -130,27 +134,17 @@ mod tests {
         .await
         .unwrap();
 
-        assert_eq!(res, vec![
-            TerraformVariableStatus {
-                variable_id: var_1,
-                variable_name: None
-            },
-            TerraformVariableStatus {
-                variable_id: var_2.clone(),
-                variable_name: Some(var_2)
-            },
-            TerraformVariableStatus {
-                variable_id: var_3,
-                variable_name: None
-            },
-            TerraformVariableStatus {
-                variable_id: var_4.clone(),
-                variable_name: Some(var_4)
-            },
-            TerraformVariableStatus {
-                variable_id: var_5,
-                variable_name: None
-            },
-        ])
+        assert!(res.get(0).unwrap().get_variable_id().is_none());
+        assert!(res.get(1).unwrap().get_variable_id().is_some());
+        assert!(res.get(2).unwrap().get_variable_id().is_none());
+        assert!(res.get(3).unwrap().get_variable_id().is_some());
+        assert!(res.get(4).unwrap().get_variable_id().is_none());
+
+        // Delete test data
+        let ids = create_result
+            .iter()
+            .map(|val| val.get_variable_id().to_owned())
+            .collect();
+        delete_variable(&api_conn_prop, &ids).await.unwrap();
     }
 }

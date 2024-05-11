@@ -21,8 +21,8 @@ impl TerraformVariableProperty {
         variable_id: Option<String>,
         variable_name: String,
         value: serde_json::Value,
-    ) -> TerraformVariableProperty {
-        TerraformVariableProperty {
+    ) -> Self {
+        Self {
             variable_id,
             variable_name,
             value,
@@ -80,15 +80,16 @@ pub async fn update_variable(
         let mut map = HashMap::new();
         let variable_id = terraform_variable_property[i].variable_id.as_ref().unwrap();
         let data = json!({
-          "type": "vars",
-        "id": variable_id,
-          "attributes": {
-            "key": terraform_variable_property[i].variable_name,
-            "value": terraform_variable_property[i].value,
-            "description": "",
-            "category": "terraform",
-            "hcl": true,
-          }});
+            "type": "vars",
+            "id": variable_id,
+            "attributes": {
+                "key": terraform_variable_property[i].variable_name,
+                "value": terraform_variable_property[i].value,
+                "description": "",
+                "category": "terraform",
+                "hcl": true,
+            }
+        });
         map.insert("data", data.to_string());
 
         let path = format!("/api/v2/workspaces/{}/vars/{}", workspace_id, variable_id);
@@ -225,7 +226,7 @@ pub async fn create_variable(
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use rand::distributions::{Alphanumeric, DistString};
 
     use super::*;
@@ -233,7 +234,7 @@ mod tests {
 
     // Function for deleting test data
     // Call on demand.
-    async fn delete_variable(
+    pub async fn delete_variable(
         api_conn_prop: &TerraformApiConnectionProperty,
         variable_ids: &Vec<String>,
     ) -> Result<(), Box<dyn std::error::Error>> {
@@ -292,23 +293,24 @@ mod tests {
 
         let cases: Vec<serde_json::Value> = vec![
             json!("aaa\"bbb"),                        // string with quote
-            //TODO:
-            //json!("aaa"),                             // string
-            //json!(-1.2345),                           // negative float
-            //json!(0),                                 // number
-            //json!(1.2345),                            // float
-            //json!(["aaa", "bbb", "ccc"]),             // array
-            //json!([{"a":"aaa","b":"bbb","c":"ccc"}]), // list of map
-            //json!(false),                             // bool
-            //json!({"a":"aaa","b":"bbb","c":null}),    // map
-            //json!({"bool":{"sensitive":false,"type":"bool","value":false},"list_of_object":{"sensitive":false,"type":["object",{"a":"string","b":"string","c":"string"}],"value":{"a":"aaa","b":"bbb","c":null}},"map_of_string":{"sensitive":false,"type":["map","string"],"value":{"a":"aaa","b":"bbb","c":"ccc"}},"number_0":{"sensitive":false,"type":"number","value":0},"number_float":{"sensitive":false,"type":"number","value":1.2345},"number_negative":{"sensitive":false,"type":"number","value":-1.2345},"sensitive":{"sensitive":true,"type":"string","value":"**************"},"set_of_object":{"sensitive":false,"type":["set",["object",{"name":"string","type":"string"}]],"value":[{"name":"aaa","type":"bbb"}]},"string":{"sensitive":false,"type":"string","value":"aaa"},"string_with_quote":{"sensitive":false,"type":"string","value":"aaa\"bbb"},"tuple":{"sensitive":false,"type":["tuple",["string","string"]],"value":["aaa","bbb"]}}
-            //), // complex
+            json!("aaa"),                             // string
+            json!(-1.2345),                           // negative float
+            json!(0),                                 // number
+            json!(1.2345),                            // float
+            json!(["aaa", "bbb", "ccc"]),             // array
+            json!([{"a":"aaa","b":"bbb","c":"ccc"}]), // list of map
+            json!(false),                             // bool
+            json!({"a":"aaa","b":"bbb","c":null}),    // map
+            json!({"bool":{"sensitive":false,"type":"bool","value":false},"list_of_object":{"sensitive":false,"type":["object",{"a":"string","b":"string","c":"string"}],"value":{"a":"aaa","b":"bbb","c":null}},"map_of_string":{"sensitive":false,"type":["map","string"],"value":{"a":"aaa","b":"bbb","c":"ccc"}},"number_0":{"sensitive":false,"type":"number","value":0},"number_float":{"sensitive":false,"type":"number","value":1.2345},"number_negative":{"sensitive":false,"type":"number","value":-1.2345},"sensitive":{"sensitive":true,"type":"string","value":"**************"},"set_of_object":{"sensitive":false,"type":["set",["object",{"name":"string","type":"string"}]],"value":[{"name":"aaa","type":"bbb"}]},"string":{"sensitive":false,"type":"string","value":"aaa"},"string_with_quote":{"sensitive":false,"type":"string","value":"aaa\"bbb"},"tuple":{"sensitive":false,"type":["tuple",["string","string"]],"value":["aaa","bbb"]}}
+            ), // complex
         ];
 
+        // Temporary variable IDs to be deleted after testing
         let mut variable_ids = Vec::new();
+        // Iterates over cases
         for case in cases.iter() {
             let val = Alphanumeric
-                .sample_string(&mut rand::thread_rng(), 8)
+                .sample_string(&mut rand::thread_rng(), 32)
                 .to_lowercase();
             let res = create_variable(
                 &std::env::var("TFVE_WORKSPACE_ID_TESTING")
@@ -332,13 +334,13 @@ mod tests {
             .await
             .unwrap();
 
-            assert!(status[0].get_variable_name().is_some());
+            assert!(status[0].get_variable_id().is_some());
             assert_eq!(
                 &serde_json::from_str::<serde_json::Value>(&res[0].value.to_string()).unwrap(),
                 case
             );
 
-            variable_ids.push(status[0].get_variable_id().to_string());
+            variable_ids.push(status[0].get_variable_id().clone().unwrap());
         }
         // Delete test data
         delete_variable(&api_conn_prop, &variable_ids)

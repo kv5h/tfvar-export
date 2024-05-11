@@ -19,12 +19,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Clap: Read command-line options
     let clap = utils::clap::new_clap_command();
     let base_url = clap.get_one::<String>("base_url").unwrap();
-    let target_workspaces = clap.get_one::<String>("target_workspaces").unwrap();
+    let target_workspaces = clap.get_one::<String>("target_workspaces");
     let enable_info_log = clap.get_flag("enable_info_log");
     let show_workspaces = clap.get_flag("show_workspaces");
     let allow_update = clap.get_flag("allow_update");
-    let output_values_file = clap.try_get_one::<String>("output_values_file").unwrap();
-    let export_list = clap.try_get_one::<String>("export_list").unwrap();
+    let output_values_file = clap.try_get_one::<String>("output_values_file");
+    let export_list = clap.try_get_one::<String>("export_list");
 
     // Log
     let mut builder = env_logger::Builder::new();
@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             )
         })
         .collect();
-    let workspace_names: Vec<String> = target_workspaces
+    let workspace_names: Vec<String> = target_workspaces.unwrap()
         .split(',')
         .map(|val| val.to_string())
         .collect();
@@ -82,14 +82,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|val| workspace_name_id.get(&val).unwrap().to_owned())
         .collect();
 
-    let export_map = read_export_list(&export_list.unwrap()).unwrap().unwrap();
+    let export_map = read_export_list(&export_list.clone().unwrap().unwrap()).unwrap().unwrap();
     let variable_names: Vec<String> = export_map
         .iter()
         .map(|(_, variable)| variable.to_string())
         .collect();
 
     // Outputs
-    let outputs_list = get_outputs(&export_list.unwrap()).unwrap();
+    let outputs_list = get_outputs(&export_list.unwrap().unwrap()).unwrap();
 
     for workspace_id in workspace_ids {
         let variable_name_id = get_variables(&workspace_id, &api_conn_prop).await?;

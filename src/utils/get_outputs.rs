@@ -19,7 +19,8 @@ impl OutputValue {
     }
 }
 
-/// Read outputs from a file generated with `terraform output --json`.
+/// Read outputs from a file generated with `terraform output --json`
+/// and return a Vector of `OutputValue`.
 ///
 /// ## Remark
 ///
