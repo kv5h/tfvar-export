@@ -1,0 +1,6 @@
+# ignored as a comment
+number_0,number_0_out
+# ignored as a comment
+string,string_out
+# ignored as a comment
+set_of_object,set_of_object_out
