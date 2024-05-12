@@ -54,8 +54,6 @@ pub fn construct_export_value(
 
 #[cfg(test)]
 mod tests {
-    use std::collections::vec_deque;
-
     use serde_json::json;
 
     use super::*;

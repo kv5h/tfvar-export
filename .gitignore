@@ -25,3 +25,6 @@ env.toml
 
 # Added by cargo
 /target
+
+# Files prefixed with `_`
+_*

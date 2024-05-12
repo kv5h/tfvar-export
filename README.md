@@ -140,5 +140,6 @@ TODO: Add examples for each flag.
 
 ## Testing
 
-- Set the `TFVE_WORKSPACE_ID_TESTING` environment variable.
-  - You should use a testing dedicated workspace for safety.
+- Set the `TFVE_WORKSPACE_ID_TESTING` and `TFVE_WORKSPACE_ID_TESTING2` environment
+  variable.
+  - You should use testing dedicated workspaces for safety.
