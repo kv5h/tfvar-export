@@ -103,6 +103,8 @@ mod tests {
             .iter()
             .map(|(_, id)| id.to_owned())
             .collect();
-        delete_variable(&api_conn_prop, &ids).await.unwrap();
+        delete_variable(&api_conn_prop, &ids, workspace_id)
+            .await
+            .unwrap();
     }
 }

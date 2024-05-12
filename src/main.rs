@@ -1,17 +1,18 @@
 mod terraform_api;
 mod utils;
 
-use std::{collections::HashMap, process::id};
+use std::collections::HashMap;
+
+use log::warn;
 
 use crate::{
     terraform_api::{
         check_variable_status::check_variable_status,
         connection_prop::TerraformApiConnectionProperty,
-        get_variables::get_variables,
         get_workspaces::get_workspaces,
-        register_variable::{create_variable, TerraformVariableProperty},
+        register_variable::{create_variable, update_variable, TerraformVariableProperty},
     },
-    utils::{get_outputs::get_outputs, read_export_list::read_export_list},
+    utils::construct_export_value::construct_export_value,
 };
 
 #[tokio::main]
@@ -19,12 +20,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Clap: Read command-line options
     let clap = utils::clap::new_clap_command();
     let base_url = clap.get_one::<String>("base_url").unwrap();
-    let target_workspaces = clap.get_one::<String>("target_workspaces");
+    let target_workspaces = clap.try_get_one::<String>("target_workspaces").unwrap();
     let enable_info_log = clap.get_flag("enable_info_log");
     let show_workspaces = clap.get_flag("show_workspaces");
     let allow_update = clap.get_flag("allow_update");
-    let output_values_file = clap.try_get_one::<String>("output_values_file");
-    let export_list = clap.try_get_one::<String>("export_list");
+    let output_values_file = clap.try_get_one::<String>("output_values_file").unwrap();
+    let export_list = clap.try_get_one::<String>("export_list").unwrap();
 
     // Log
     let mut builder = env_logger::Builder::new();
@@ -61,19 +62,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    // Workspace
-    let workspaces = get_workspaces(false, &organization_name, &api_conn_prop).await?;
-    // Map of Workspace Name and ID
-    let workspace_name_id: HashMap<String, String> = workspaces
-        .into_iter()
-        .map(|val| {
-            (
-                val.get_workspace_name().to_string(),
-                val.get_workspace_id().to_string(),
-            )
-        })
-        .collect();
-    let workspace_names: Vec<String> = target_workspaces.unwrap()
+    // Workspace(s)
+    let workspace_name_id: HashMap<String, String> =
+        get_workspaces(false, &organization_name, &api_conn_prop)
+            .await?
+            .into_iter()
+            .map(|val| {
+                (
+                    val.get_workspace_name().to_string(),
+                    val.get_workspace_id().to_string(),
+                )
+            })
+            .collect();
+    let workspace_names: Vec<String> = target_workspaces
+        .unwrap()
         .split(',')
         .map(|val| val.to_string())
         .collect();
@@ -82,54 +84,78 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|val| workspace_name_id.get(&val).unwrap().to_owned())
         .collect();
 
-    let export_map = read_export_list(&export_list.clone().unwrap().unwrap()).unwrap().unwrap();
-    let variable_names: Vec<String> = export_map
+    // Variable name and its value
+    let var_name_val = construct_export_value(export_list.unwrap(), output_values_file.unwrap())?;
+    let var_name_val_map: HashMap<String, serde_json::Value> = var_name_val
         .iter()
-        .map(|(_, variable)| variable.to_string())
+        .map(|val| {
+            (
+                val.get_variable_name().to_owned(),
+                val.get_value().to_owned(),
+            )
+        })
+        .collect();
+    let target_variable_names = var_name_val
+        .iter()
+        .map(|val| val.get_variable_name().to_owned())
         .collect();
 
-    // Outputs
-    let outputs_list = get_outputs(&export_list.unwrap().unwrap()).unwrap();
-
+    // Loop over workspace(s)
     for workspace_id in workspace_ids {
-        let variable_name_id = get_variables(&workspace_id, &api_conn_prop).await?;
-        let variable_id_name: HashMap<String, String> = variable_name_id
+        // Variable status; existing or not
+        let status =
+            check_variable_status(&workspace_id, &api_conn_prop, &target_variable_names).await?;
+        // Variable(s) to be created
+        let vars_new = status
             .iter()
-            .map(|(name, id)| (id.to_owned(), name.to_owned()))
-            .collect();
-
-        // Vector of tuple `(id, name, index)`
-        let existing_vars: Vec<(String, String, usize)> = variable_names
-            .iter()
-            .enumerate()
-            .filter(|(_, name)| variable_name_id.get(*name).is_some())
-            .map(|(idx, name)| {
-                (
-                    variable_name_id.get(name).unwrap().to_owned(),
-                    name.to_owned(),
-                    idx,
+            .filter(|val| val.get_variable_id().is_none())
+            .map(|val| {
+                TerraformVariableProperty::new(
+                    None,
+                    val.get_variable_name().to_owned(),
+                    var_name_val_map
+                        .get(val.get_variable_name())
+                        .unwrap()
+                        .to_owned(),
                 )
             })
             .collect();
-        // Update // TODO:
+        let create_variable_result =
+            create_variable(&workspace_id, &api_conn_prop, &vars_new).await?;
+        println!("Variable(s) created: {:#?}", create_variable_result);
 
-        // Vector of tuple `(name, idx)``
-        let new_vars: Vec<(String, usize)> = variable_names
-            .iter()
-            .enumerate()
-            .filter(|(_, name)| variable_name_id.get(*name).is_none())
-            .map(|(idx, name)| (name.to_owned(), idx))
-            .collect();
+        if allow_update {
+            // Variable(s) already existing
+            let vars_existing = status
+                .iter()
+                .filter(|val| val.get_variable_id().is_some())
+                .map(|val| {
+                    TerraformVariableProperty::new(
+                        Some(val.get_variable_id().clone().unwrap()),
+                        val.get_variable_name().to_owned(),
+                        var_name_val_map
+                            .get(val.get_variable_name())
+                            .unwrap()
+                            .to_owned(),
+                    )
+                })
+                .collect();
 
-        for (name, idx) in new_vars.into_iter() {
-            create_variable(&workspace_id, &api_conn_prop, &vec![
-                TerraformVariableProperty::new(
-                    None,
-                    name,
-                    outputs_list.get(idx).unwrap().get_value().to_owned(),
-                ),
-            ])
-            .await?;
+            let update_variable_result =
+                update_variable(&workspace_id, &api_conn_prop, &vars_existing).await?;
+            println!("Variable(s) updated: {:#?}", update_variable_result);
+        } else {
+            // Variable(s) already existing
+            let vars_existing: Vec<&str> = status
+                .iter()
+                .filter(|val| val.get_variable_id().is_some())
+                .map(|val| val.get_variable_name())
+                .collect();
+            warn!(
+                "Following variable(s) were ignored because they are already existing but \
+                 `--allow_update` was not specified: {:#?}",
+                vars_existing
+            );
         }
     }
 

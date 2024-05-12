@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use crate::{get_outputs, read_export_list};
+use crate::utils::{get_outputs::get_outputs, read_export_list::read_export_list};
 
 #[derive(Debug, PartialEq)]
 pub struct ExportValue {

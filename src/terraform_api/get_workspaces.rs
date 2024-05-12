@@ -47,6 +47,11 @@ pub async fn get_projects(
     let path = format!("/api/v2/organizations/{}/projects", organization_name);
     url.set_path(&path);
 
+    log::info!(
+        "Getting project(s) from the organization {}.",
+        organization_name
+    );
+
     let response_projects = reqwest::Client::new()
         .get(url.as_str())
         .header("Authorization", format!("Bearer {}", token))
@@ -70,7 +75,7 @@ pub async fn get_projects(
             result.insert(terraform_project_id, terraform_project_name);
         });
 
-    log::info!("{} workspaces found.", result.len());
+    log::info!("{} project(s) found.", result.len());
 
     Ok(result)
 }
@@ -95,6 +100,11 @@ pub async fn get_workspaces(
 
     let path = format!("/api/v2/organizations/{}/workspaces", organization_name);
     url.set_path(&path);
+
+    log::info!(
+        "Getting workspace(s) from the organization {}.",
+        organization_name
+    );
 
     let response_workspaces = reqwest::Client::new()
         .get(url.as_str())
@@ -135,7 +145,7 @@ pub async fn get_workspaces(
             })
         });
 
-    log::info!("{} projects found.", terraform_workspaces.len());
+    log::info!("{} workspace(s) found.", terraform_workspaces.len());
 
     if show_workspaces {
         println!("{}", serde_json::to_string_pretty(&terraform_workspaces)?)

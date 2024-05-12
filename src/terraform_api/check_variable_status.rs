@@ -145,6 +145,8 @@ mod tests {
             .iter()
             .map(|val| val.get_variable_id().to_owned())
             .collect();
-        delete_variable(&api_conn_prop, &ids).await.unwrap();
+        delete_variable(&api_conn_prop, &ids, workspace_id)
+            .await
+            .unwrap();
     }
 }
