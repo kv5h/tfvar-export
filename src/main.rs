@@ -86,16 +86,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Variable name and its value
     let var_name_val = construct_export_value(export_list.unwrap(), output_values_file.unwrap())?;
-    let var_name_val_map: HashMap<String, serde_json::Value> = var_name_val
+    let var_name_val_des_map: HashMap<String, (Option<String>, serde_json::Value)> = var_name_val
         .iter()
         .map(|val| {
             (
                 val.get_variable_name().to_owned(),
-                val.get_value().to_owned(),
+                (
+                    val.get_variable_description().to_owned(),
+                    val.get_value().to_owned(),
+                ),
             )
         })
         .collect();
-    let target_variable_names = var_name_val
+    let target_variables = var_name_val
         .iter()
         .map(|val| val.get_variable_name().to_owned())
         .collect();
@@ -104,46 +107,62 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for workspace_id in workspace_ids {
         // Variable status; existing or not
         let status =
-            check_variable_status(&workspace_id, &api_conn_prop, &target_variable_names).await?;
+            check_variable_status(&workspace_id, &api_conn_prop, &target_variables).await?;
         // Variable(s) to be created
-        let vars_new = status
+        let vars_new: Vec<TerraformVariableProperty> = status
             .iter()
             .filter(|val| val.get_variable_id().is_none())
             .map(|val| {
                 TerraformVariableProperty::new(
                     None,
                     val.get_variable_name().to_owned(),
-                    var_name_val_map
+                    var_name_val_des_map
                         .get(val.get_variable_name())
                         .unwrap()
+                        .0
+                        .to_owned(),
+                    var_name_val_des_map
+                        .get(val.get_variable_name())
+                        .unwrap()
+                        .1
                         .to_owned(),
                 )
             })
             .collect();
-        let create_variable_result =
-            create_variable(&workspace_id, &api_conn_prop, &vars_new).await?;
-        println!("Variable(s) created: {:#?}", create_variable_result);
+        if 0 < vars_new.len() {
+            let create_variable_result =
+                create_variable(&workspace_id, &api_conn_prop, &vars_new).await?;
+            println!("Variable(s) created: {:#?}", create_variable_result);
+        }
 
         if allow_update {
             // Variable(s) already existing
-            let vars_existing = status
+            let vars_existing: Vec<TerraformVariableProperty> = status
                 .iter()
                 .filter(|val| val.get_variable_id().is_some())
                 .map(|val| {
                     TerraformVariableProperty::new(
                         Some(val.get_variable_id().clone().unwrap()),
                         val.get_variable_name().to_owned(),
-                        var_name_val_map
+                        var_name_val_des_map
                             .get(val.get_variable_name())
                             .unwrap()
+                            .0
+                            .to_owned(),
+                        var_name_val_des_map
+                            .get(val.get_variable_name())
+                            .unwrap()
+                            .1
                             .to_owned(),
                     )
                 })
                 .collect();
 
-            let update_variable_result =
-                update_variable(&workspace_id, &api_conn_prop, &vars_existing).await?;
-            println!("Variable(s) updated: {:#?}", update_variable_result);
+            if 0 < vars_existing.len() {
+                let update_variable_result =
+                    update_variable(&workspace_id, &api_conn_prop, &vars_existing).await?;
+                println!("Variable(s) updated: {:#?}", update_variable_result);
+            }
         } else {
             // Variable(s) already existing
             let vars_existing: Vec<&str> = status
@@ -151,11 +170,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .filter(|val| val.get_variable_id().is_some())
                 .map(|val| val.get_variable_name())
                 .collect();
-            warn!(
-                "Following variable(s) were ignored because they are already existing but \
-                 `--allow_update` was not specified: {:#?}",
-                vars_existing
-            );
+            if 0 < vars_existing.len() {
+                warn!(
+                    "Following variable(s) were ignored because they are existing but \
+                     `--allow_update` is not specified: {:#?}",
+                    vars_existing
+                );
+            }
         }
     }
 

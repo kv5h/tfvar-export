@@ -14,6 +14,7 @@ use crate::terraform_api::connection_prop::TerraformApiConnectionProperty;
 pub struct TerraformVariableProperty {
     variable_id: Option<String>,
     variable_name: String,
+    variable_description: Option<String>,
     value: serde_json::Value,
 }
 
@@ -21,11 +22,13 @@ impl TerraformVariableProperty {
     pub fn new(
         variable_id: Option<String>,
         variable_name: String,
+        variable_description: Option<String>,
         value: serde_json::Value,
     ) -> Self {
         Self {
             variable_id,
             variable_name,
+            variable_description,
             value,
         }
     }
@@ -38,6 +41,10 @@ impl TerraformVariableProperty {
         &self.variable_name
     }
 
+    fn get_variable_description(&self) -> &Option<String> {
+        &self.variable_description
+    }
+
     fn get_value(&self) -> &serde_json::Value {
         &self.value
     }
@@ -45,21 +52,31 @@ impl TerraformVariableProperty {
 
 /// Terraform variable Create/Update result
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct TerraformVariableRegistrationResult {
     variable_id: String,
     variable_name: String,
+    variable_description: String,
     value: serde_json::Value,
 }
 
 impl TerraformVariableRegistrationResult {
+    #[cfg(test)]
     pub fn get_variable_id(&self) -> &str {
         &self.variable_id
     }
 
+    #[cfg(test)]
     pub fn get_variable_name(&self) -> &str {
         &self.variable_name
     }
 
+    #[cfg(test)]
+    pub fn get_variable_description(&self) -> &str {
+        &self.variable_description
+    }
+
+    #[cfg(test)]
     pub fn get_value(&self) -> &serde_json::Value {
         &self.value
     }
@@ -123,6 +140,15 @@ pub async fn update_variable(
             _ => false,
         };
 
+        let description = match &terraform_variable_property
+            .get(i)
+            .unwrap()
+            .get_variable_description()
+        {
+            Some(val) => val,
+            None => "",
+        };
+
         let data_value = if is_string {
             terraform_variable_property
                 .get(i)
@@ -146,7 +172,7 @@ pub async fn update_variable(
                 "attributes": {
                     "key": terraform_variable_property.get(i).unwrap().get_variable_name(),
                     "value": data_value,
-                    "description": "",
+                    "description": description,
                     "category": "terraform",
                     "hcl": is_hcl
                   }
@@ -184,11 +210,15 @@ pub async fn update_variable(
                 .as_str()
                 .unwrap()
                 .to_string(),
+            variable_description: json_value["data"]["attributes"]["description"]
+                .as_str()
+                .unwrap()
+                .to_string(),
             value,
         });
     }
 
-    log::info!("{} Variable(s) successfully created.", count);
+    log::info!("{} Variable(s) successfully updated.", count);
 
     Ok(result)
 }
@@ -242,6 +272,15 @@ pub async fn create_variable(
             _ => false,
         };
 
+        let description = match &terraform_variable_property
+            .get(i)
+            .unwrap()
+            .get_variable_description()
+        {
+            Some(val) => val,
+            None => "",
+        };
+
         let data_value = if is_string {
             terraform_variable_property
                 .get(i)
@@ -264,7 +303,7 @@ pub async fn create_variable(
                 "attributes": {
                     "key": terraform_variable_property.get(i).unwrap().get_variable_name(),
                     "value": data_value,
-                    "description": "",
+                    "description": description,
                     "category": "terraform",
                     "hcl": is_hcl
                   }
@@ -302,6 +341,10 @@ pub async fn create_variable(
                 .as_str()
                 .unwrap()
                 .to_string(),
+            variable_description: json_value["data"]["attributes"]["description"]
+                .as_str()
+                .unwrap()
+                .to_string(),
             value,
         });
     }
@@ -313,7 +356,6 @@ pub async fn create_variable(
 
 #[cfg(test)]
 pub mod tests {
-    use rand::distributions::{Alphanumeric, DistString};
 
     use super::*;
     use crate::terraform_api::check_variable_status::check_variable_status;
@@ -389,14 +431,13 @@ pub mod tests {
         for workspace_id in workspaces_ids.into_iter() {
             // Iterates over cases
             for case in cases.iter() {
-                let val = Alphanumeric
-                    .sample_string(&mut rand::thread_rng(), 32)
-                    .to_lowercase();
+                let test_val = uuid::Uuid::new_v4().to_string();
                 // Create temporary variable to be updated
                 let res = create_variable(&workspace_id, &api_conn_prop, &vec![
                     TerraformVariableProperty {
                         variable_id: None,
-                        variable_name: val.clone(),
+                        variable_name: test_val.to_owned(),
+                        variable_description: None,
                         value: case.clone(),
                     },
                 ])
@@ -418,16 +459,23 @@ pub mod tests {
                         variable_id: Some(
                             status.get(0).unwrap().get_variable_id().clone().unwrap(),
                         ),
-                        variable_name: val,
+                        variable_name: test_val.to_owned(),
+                        variable_description: Some(test_val.to_owned()),
                         value: json!("updated_val"),
                     },
                 ])
                 .await
                 .unwrap();
 
+                // Value
                 assert_eq!(
                     json!("updated_val"),
                     res_update.get(0).unwrap().get_value().to_owned()
+                );
+                // Description
+                assert_eq!(
+                    test_val,
+                    res_update.get(0).unwrap().get_variable_description()
                 );
 
                 // Delete test data
@@ -443,7 +491,7 @@ pub mod tests {
     }
 
     #[tokio::test]
-    async fn test_create_variable_short() {
+    async fn test_create_variable_with_description_short() {
         let api_conn_prop = TerraformApiConnectionProperty::new(
             url::Url::parse("https://app.terraform.io").unwrap(),
             std::env::var("TFVE_TOKEN").unwrap(),
@@ -462,13 +510,12 @@ pub mod tests {
         let mut variable_ids = Vec::new();
         // Iterates over cases
         for case in cases.iter() {
-            let val = Alphanumeric
-                .sample_string(&mut rand::thread_rng(), 32)
-                .to_lowercase();
+            let test_val = uuid::Uuid::new_v4().to_string();
             let res = create_variable(workspace_id, &api_conn_prop, &vec![
                 TerraformVariableProperty {
                     variable_id: None,
-                    variable_name: val.clone(),
+                    variable_name: test_val.to_owned(),
+                    variable_description: Some(test_val.to_owned()),
                     value: case.clone(),
                 },
             ])
@@ -483,11 +530,83 @@ pub mod tests {
             .await
             .unwrap();
 
+            // Variable ID should be Some
             assert!(status.get(0).unwrap().get_variable_id().is_some());
+            // Value
             assert_eq!(
-                &serde_json::from_str::<serde_json::Value>(&res.get(0).unwrap().value.to_string())
-                    .unwrap(),
+                &serde_json::from_str::<serde_json::Value>(
+                    &res.get(0).unwrap().get_value().to_string()
+                )
+                .unwrap(),
                 case
+            );
+            // Description
+            assert_eq!(
+                res.get(0).unwrap().get_variable_description().to_owned(),
+                test_val
+            );
+
+            variable_ids.push(status.get(0).unwrap().get_variable_id().clone().unwrap());
+        }
+        // Delete test data
+        delete_variable(&api_conn_prop, &variable_ids, workspace_id)
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_create_variable_without_description_short() {
+        let api_conn_prop = TerraformApiConnectionProperty::new(
+            url::Url::parse("https://app.terraform.io").unwrap(),
+            std::env::var("TFVE_TOKEN").unwrap(),
+        );
+
+        let workspace_id = &std::env::var("TFVE_WORKSPACE_ID_TESTING")
+            .expect("Environment variable `TFVE_WORKSPACE_ID_TESTING` required.");
+
+        let cases: Vec<serde_json::Value> = vec![
+            json!("aaa\"bbb"), // string with quote
+            json!(-1.2345),    // negative float
+        ];
+
+        // Temporary variable IDs to be deleted after testing
+        let mut variable_ids = Vec::new();
+        // Iterates over cases
+        for case in cases.iter() {
+            let test_val = uuid::Uuid::new_v4().to_string();
+            let res = create_variable(workspace_id, &api_conn_prop, &vec![
+                TerraformVariableProperty {
+                    variable_id: None,
+                    variable_name: test_val.to_owned(),
+                    variable_description: None,
+                    value: case.clone(),
+                },
+            ])
+            .await
+            .unwrap();
+
+            let status = check_variable_status(workspace_id, &api_conn_prop, &vec![res
+                .get(0)
+                .unwrap()
+                .variable_name
+                .clone()])
+            .await
+            .unwrap();
+
+            // Variable ID should be Some
+            assert!(status.get(0).unwrap().get_variable_id().is_some());
+            // Value
+            assert_eq!(
+                &serde_json::from_str::<serde_json::Value>(
+                    &res.get(0).unwrap().get_value().to_string()
+                )
+                .unwrap(),
+                case
+            );
+            // Description
+            assert_eq!(
+                res.get(0).unwrap().get_variable_description().to_owned(),
+                ""
             );
 
             variable_ids.push(status.get(0).unwrap().get_variable_id().clone().unwrap());
@@ -527,13 +646,12 @@ pub mod tests {
         let mut variable_ids = Vec::new();
         // Iterates over cases
         for case in cases.iter() {
-            let val = Alphanumeric
-                .sample_string(&mut rand::thread_rng(), 32)
-                .to_lowercase();
+            let test_val = uuid::Uuid::new_v4().to_string();
             let res = create_variable(workspace_id, &api_conn_prop, &vec![
                 TerraformVariableProperty {
                     variable_id: None,
-                    variable_name: val.clone(),
+                    variable_name: test_val.to_owned(),
+                    variable_description: Some(test_val.to_owned()),
                     value: case.clone(),
                 },
             ])
@@ -549,11 +667,18 @@ pub mod tests {
             .await
             .unwrap();
 
+            // Variable ID should be Some
             assert!(status.get(0).unwrap().get_variable_id().is_some());
+            // Value
             assert_eq!(
                 &serde_json::from_str::<serde_json::Value>(&res.get(0).unwrap().value.to_string())
                     .unwrap(),
                 case
+            );
+            // Description
+            assert_eq!(
+                res.get(0).unwrap().get_variable_description().to_owned(),
+                test_val
             );
 
             variable_ids.push(status.get(0).unwrap().get_variable_id().clone().unwrap());

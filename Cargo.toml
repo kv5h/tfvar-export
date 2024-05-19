@@ -7,6 +7,7 @@ description = "Set Terraform Cloud variables across Projects and Workspaces from
 [dev-dependencies]
 chrono = "0.4.38"
 rand = "0.8.5"
+uuid = { version = "1.8.0", features = ["v4", "fast-rng", "macro-diagnostics"] }
 
 [dependencies]
 clap = { version = "4.5.0", features = ["cargo"] }

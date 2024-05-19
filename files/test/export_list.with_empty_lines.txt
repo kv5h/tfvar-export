@@ -1,9 +1,9 @@
-number_float,number_float_copy
+number_float,number_float_copy,
 
 
 # ignored as a comment
           # ugly line...
-          set_of_object,set_of_object_copy
+          set_of_object,set_of_object_copy,set_of_object_description
 
            # ignored as a comment (even ugly line)
 

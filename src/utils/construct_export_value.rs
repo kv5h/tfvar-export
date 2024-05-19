@@ -7,19 +7,17 @@ use crate::utils::{get_outputs::get_outputs, read_export_list::read_export_list}
 #[derive(Debug, PartialEq)]
 pub struct ExportValue {
     variable_name: String,
+    variable_description: Option<String>,
     value: serde_json::Value,
 }
 
 impl ExportValue {
-    pub fn new(variable_name: String, value: serde_json::Value) -> Self {
-        Self {
-            variable_name,
-            value,
-        }
-    }
-
     pub fn get_variable_name(&self) -> &str {
         &self.variable_name
+    }
+
+    pub fn get_variable_description(&self) -> &Option<String> {
+        &self.variable_description
     }
 
     pub fn get_value(&self) -> &serde_json::Value {
@@ -33,18 +31,20 @@ pub fn construct_export_value(
     file_path_export_list: &str,
     file_path_output: &str,
 ) -> Result<Vec<ExportValue>, Box<dyn std::error::Error>> {
-    // HashMap of `source output name : dest var name`
-    let var_and_output_name = read_export_list(file_path_export_list)?.unwrap();
+    // HashMap of `source output name : (dest var name, dest var description)`
+    let export_list = read_export_list(file_path_export_list)?.unwrap();
     // HashMap of `output name : output value`
     let output_value: HashMap<String, serde_json::Value> = get_outputs(file_path_output)?
         .iter()
         .map(|val| (val.get_name().to_owned(), val.get_value().to_owned()))
         .collect();
 
-    let result = var_and_output_name
+    // Merge values
+    let result = export_list
         .iter()
-        .map(|(output_name, var_name)| ExportValue {
+        .map(|(output_name, (var_name, opt_description))| ExportValue {
             variable_name: var_name.to_owned(),
+            variable_description: opt_description.to_owned(),
             value: output_value.get(output_name).unwrap().to_owned(),
         })
         .collect();
@@ -67,14 +67,17 @@ mod tests {
 
         assert!(result.contains(&ExportValue {
             variable_name: String::from("number_0_out"),
+            variable_description: None,
             value: json!(0),
         }));
         assert!(result.contains(&ExportValue {
             variable_name: String::from("string_out"),
+            variable_description: Some(String::from("string_description")),
             value: json!("aaa"),
         }));
         assert!(result.contains(&ExportValue {
             variable_name: String::from("set_of_object_out"),
+            variable_description: Some(String::from("set_of_object_description")),
             value: json!([{"name":"aaa","type":"bbb"}]),
         }));
         assert!(result.len() == 3);

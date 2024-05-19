@@ -15,8 +15,6 @@ between workspaces.
 
 ## Remarks
 
-- Only variable value is covered, hence description will NOT be updated or
-  described.
 - Outputs with type of `string`, `number` or `bool` are created/updated as
   `hcl = false` and the others as `hcl = true`.
   - Reference:
@@ -39,9 +37,15 @@ between workspaces.
 
 Export list defines variables to be exported to other workspaces.
 
-The list is specified in `Key-Value` format separated by a comma, where `Key`
-indicates the name of the output variable of the current Workspace and `Value`
-indicates the name of the variable at the destination.
+The list is specified in the format as below:
+
+```text
+<Output name>,<Variable name>,<Variable description>
+```
+
+where `<Output name>` is the name of the output in the output file and
+`<Variable name>` and `<Variable description>` are the name and its description
+of the variable at the destination.
 
 Note that only the variables listed in this list are exported.
 
@@ -54,34 +58,43 @@ output "my_output" {
   description = "my output"
   value       = "some value"
 }
+
+output "my_output_2" {
+  description = "my output 2"
+  value       = "some value 2"
+}
 ```
 
 define the export list as follows.
 
+```text
+# This line is ignored as a comment
+my_output,my_var,this_is_description
+
+# Description is optional
+my_output_2,my_var_2
 ```
-my_output,valiable_name_xyz
 
-# This line will be ignored as a comment.
-```
+Then the value of `my_output` is created or updated as `my_var` with the
+description `this_is_description` at the targeted workspace(s).
 
-Then the value of `my_output` is created or updated as `valiable_name_xyz` at
-the targeted workspace(s).
+As well, the value of `my_output_2` is created or updated as `my_var_2` without
+description.
 
-**NOTE:**
+**REMARK:**
 
 - Updating is allowed by using the `--allow-update` flag.
-- To show outputs of current workspace, use `--show-outputs` flag.
 - You can use `#` to comment out a whole line.
 
 ## Usage
 
-```
+```text
 Usage: tfvar-export [OPTIONS] [PATH_TO_OUTPUT_VALUES_FILE] [PATH_TO_EXPORT_LIST]
 
 Arguments:
-  [PATH_TO_OUTPUT_VALUES_FILE]  Path to output values file generated with `terraform output --json`.
+  [PATH_TO_OUTPUT_VALUES_FILE]  Path to the output values file generated with `terraform output --json`.
                                 Required unless `--show-workspaces` is set.
-  [PATH_TO_EXPORT_LIST]         Path to export list.
+  [PATH_TO_EXPORT_LIST]         Path to the export list.
                                 Required unless `--show-workspaces` is set.
 
 Options:
@@ -103,11 +116,9 @@ Options:
           Print version
 ```
 
-TODO: Add examples for each flag.
-
 ### Output examples
 
-#### --show-outputs
+#### `--show-workspaces`
 
 ```json
 [
@@ -140,6 +151,6 @@ TODO: Add examples for each flag.
 
 ## Testing
 
-- Set the `TFVE_WORKSPACE_ID_TESTING` and `TFVE_WORKSPACE_ID_TESTING2` environment
-  variable.
-  - You should use testing dedicated workspaces for safety.
+- Set the `TFVE_WORKSPACE_ID_TESTING` and `TFVE_WORKSPACE_ID_TESTING2`
+  environment variable.
+  - Testing dedicated workspaces should be used for safety.

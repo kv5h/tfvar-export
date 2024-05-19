@@ -77,7 +77,6 @@ pub async fn check_variable_status(
 
 #[cfg(test)]
 mod tests {
-    use rand::distributions::{Alphanumeric, DistString};
     use serde_json::json;
 
     use super::*;
@@ -90,25 +89,15 @@ mod tests {
     #[tokio::test]
     async fn test_check_variable_status() {
         // Should NOT exist
-        let var_1 = Alphanumeric
-            .sample_string(&mut rand::thread_rng(), 32)
-            .to_lowercase();
+        let test_val_1 = uuid::Uuid::new_v4().to_string();
         // Should exist
-        let var_2 = Alphanumeric
-            .sample_string(&mut rand::thread_rng(), 32)
-            .to_lowercase();
+        let test_val_2 = uuid::Uuid::new_v4().to_string();
         // Should NOT exist
-        let var_3 = Alphanumeric
-            .sample_string(&mut rand::thread_rng(), 32)
-            .to_lowercase();
+        let test_val_3 = uuid::Uuid::new_v4().to_string();
         // Should exist
-        let var_4 = Alphanumeric
-            .sample_string(&mut rand::thread_rng(), 32)
-            .to_lowercase();
+        let test_val_4 = uuid::Uuid::new_v4().to_string();
         // Should NOT exist
-        let var_5 = Alphanumeric
-            .sample_string(&mut rand::thread_rng(), 32)
-            .to_lowercase();
+        let test_val_5 = uuid::Uuid::new_v4().to_string();
 
         let api_conn_prop = TerraformApiConnectionProperty::new(
             url::Url::parse("https://app.terraform.io").unwrap(),
@@ -118,18 +107,28 @@ mod tests {
             .expect("Environment variable `TFVE_WORKSPACE_ID_TESTING` required.");
 
         let create_result = create_variable(workspace_id, &api_conn_prop, &vec![
-            TerraformVariableProperty::new(None, var_2.clone(), json!(var_2)),
-            TerraformVariableProperty::new(None, var_4.clone(), json!(var_4)),
+            TerraformVariableProperty::new(
+                None,
+                test_val_2.clone(),
+                Some(test_val_2.clone()),
+                json!(test_val_2),
+            ),
+            TerraformVariableProperty::new(
+                None,
+                test_val_4.clone(),
+                Some(test_val_4.clone()),
+                json!(test_val_4),
+            ),
         ])
         .await
         .unwrap();
 
         let res = check_variable_status(workspace_id, &api_conn_prop, &vec![
-            var_1.clone(),
-            var_2.clone(),
-            var_3.clone(),
-            var_4.clone(),
-            var_5.clone(),
+            test_val_1.clone(),
+            test_val_2.clone(),
+            test_val_3.clone(),
+            test_val_4.clone(),
+            test_val_5.clone(),
         ])
         .await
         .unwrap();
