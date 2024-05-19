@@ -27,9 +27,9 @@ jobs:
         strategy:
             matrix:
                 toolchain:
-                    - stable
-                    #- beta
-                    #- nightly
+                    # - stable
+                    # - beta
+                    - nightly
         steps:
             - uses: actions/checkout@v4
             - name: rustup update
@@ -38,8 +38,8 @@ jobs:
                   matrix.toolchain }}
             - name: rustfmt
               run:
-                  find ./ -name *.rs | xargs -I{} rustfmt --edition 2021 --check
-                  {}
+                  rustup component add rustfmt && find ./ -name *.rs | xargs
+                  -I{} rustfmt --edition 2021 --check {}
             - name: cargo build
               run: cargo build
             # TODO: Searching for a way securely running api tests.
