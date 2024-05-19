@@ -1,4 +1,5 @@
-![cargo_ci](https://github.com/kv5h/tfvar-export/actions/workflows/cargo_ci.yaml/badge.svg)
+[![cargo_ci](https://github.com/kv5h/tfvar-export/actions/workflows/cargo_ci.yaml/badge.svg)](https://github.com/kv5h/tfvar-export/blob/main/.github/workflows/cargo_ci.yaml)
+![rust_version](https://img.shields.io/badge/Rust_version-rustc_1.80.0--nightly-red)
 
 # tfvar-export
 
