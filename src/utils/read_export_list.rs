@@ -22,18 +22,23 @@ pub fn read_export_list(
     let mut output: HashMap<String, (String, Option<String>)> = HashMap::new();
     let mut lines = contents.lines();
 
-    if lines.clone().count().lt(&1) {
-        log::error!("No entry found in export list.");
-        return Ok(None);
-    }
-
+    let mut entries = Vec::new();
     while let Some(mut line) = lines.next() {
         line = line.trim();
         if line.is_empty() || line.starts_with("#") {
             // Skip an empty or a comment line
             continue;
         }
-        let record: Vec<String> = line.split(',').map(|val| val.to_string()).collect();
+        entries.push(line)
+    }
+
+    if entries.len().lt(&1) {
+        log::error!("No valid entries found in export list.");
+        return Ok(None);
+    }
+
+    entries.into_iter().for_each(|entry| {
+        let record: Vec<String> = entry.split(',').map(|val| val.to_string()).collect();
         let source = record.get(0).expect("Failed to read entry.").to_owned();
         let dest = record.get(1).expect("Failed to read entry.").to_owned();
         let description = match record.get(2) {
@@ -41,7 +46,7 @@ pub fn read_export_list(
             None => None,
         };
         output.insert(source, (dest, description));
-    }
+    });
 
     Ok(Some(output))
 }
