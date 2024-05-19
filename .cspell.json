@@ -7,6 +7,8 @@
         "ratelimit",
         "ratelimiter",
         "reqwest",
+        "rustfmt",
+        "rustup",
         "streetsidesoftware",
         "tfvar",
         "tfve",
