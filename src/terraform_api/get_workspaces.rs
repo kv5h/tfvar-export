@@ -32,8 +32,14 @@ impl TerraformWorkspace {
 }
 
 /// Max element numbers per page.
-/// - TODO: If your case exceeds this, additional implementations are required.
-/// - Ref: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/projects#list-projects
+///
+/// ## TODO:
+///
+/// If your case exceeds this, additional implementations are required.
+///
+/// ## Reference
+///
+/// https://developer.hashicorp.com/terraform/cloud-docs/api-docs/projects#list-projects
 const TERRAFORM_API_QS_PAGE_SIZE: u8 = 100;
 
 /// Get Terraform projects and return a HashMap of `Project ID: Project Name`.
@@ -82,7 +88,7 @@ pub async fn get_projects(
 
 /// Get Terraform workspaces and return vector of `TerraformWorkspace` struct.
 ///
-/// Using `--show-workspaces` flag prints workspaces with their associated project.
+/// Using `--show-workspaces` flag prints workspaces with their associated projects.
 pub async fn get_workspaces(
     show_workspaces: bool,
     organization_name: &str,
@@ -109,7 +115,7 @@ pub async fn get_workspaces(
         .text()
         .await?;
 
-    // List workspaces and then get workspace to map a workspace and its project.
+    // List workspaces and then get workspaces to map a workspace and its project.
     let response_workspaces_val: serde_json::Value = serde_json::from_str(&response_workspaces)?;
     let mut terraform_workspaces = Vec::new();
     let terraform_projects_map = get_projects(organization_name, api_conn_prop).await?;

@@ -31,9 +31,7 @@ pub fn construct_export_value(
     file_path_export_list: &str,
     file_path_output: &str,
 ) -> Result<Vec<ExportValue>, Box<dyn std::error::Error>> {
-    // HashMap of `source output name : (dest var name, dest var description)`
     let export_list = read_export_list(file_path_export_list)?.unwrap();
-    // HashMap of `output name : output value`
     let output_value: HashMap<String, serde_json::Value> = get_outputs(file_path_output)?
         .iter()
         .map(|val| (val.get_name().to_owned(), val.get_value().to_owned()))

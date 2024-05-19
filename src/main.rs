@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let clap = utils::clap::new_clap_command();
     let base_url = clap.get_one::<String>("base_url").unwrap();
     let target_workspaces = clap.try_get_one::<String>("target_workspaces").unwrap();
-    let enable_info_log = clap.get_flag("enable_info_log");
+    let disable_log = clap.get_flag("disable_log");
     let show_workspaces = clap.get_flag("show_workspaces");
     let allow_update = clap.get_flag("allow_update");
     let output_values_file = clap.try_get_one::<String>("output_values_file").unwrap();
@@ -29,9 +29,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Log
     let mut builder = env_logger::Builder::new();
-    match enable_info_log {
-        true => builder.filter_level(log::LevelFilter::Info),
-        false => builder.filter_level(log::LevelFilter::Error),
+    match disable_log {
+        true => builder.filter_level(log::LevelFilter::Error),
+        false => builder.filter_level(log::LevelFilter::Info),
     };
     builder.init();
 

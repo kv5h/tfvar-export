@@ -23,6 +23,9 @@ between workspaces.
   - as `Non sensitive`, so please **be careful not to specify sensitive output
     values**.
   - as category of `terraform` (NOT `environment variables`).
+- Update operation does NOT take into account whether the value was really
+  updated or not. In other words, this operation makes the value at the target
+  workspace and the value in the output file idempotent.
 
 ## Prerequisite
 
@@ -103,8 +106,8 @@ Options:
   -t, --target-workspaces <WORKSPACE_NAME1,WORKSPACE_NAME2,...>
           Comma separated Terraform Cloud workspace names.
           Required unless `--show-workspaces` is set.
-  -l, --info-log
-          Enable `Info` log.
+  -q, --disable-log
+          Disable `Info` and `Warn` log.
           Note that `Error` log is always enabled regardless of this flag.
   -w, --show-workspaces
           Show available workspaces.

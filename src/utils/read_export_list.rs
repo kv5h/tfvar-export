@@ -8,6 +8,7 @@ use std::{
 /// Read export list and return a HashMap.
 ///
 /// ## Remark
+///
 /// Return a HashMap for searching efficiency.
 pub fn read_export_list(
     file_path: &str,

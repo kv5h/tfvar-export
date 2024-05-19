@@ -84,7 +84,10 @@ impl TerraformVariableRegistrationResult {
 
 /// Update Terraform Workspace variable(s).
 ///
-/// **Remark:** To prevent [`Rate Limiting`](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#rate-limiting), limit the rate 20 requests per second.
+/// ## Remark
+///
+/// To prevent [`Rate Limiting`](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#rate-limiting),
+/// limit the rate 20 requests per second.
 pub async fn update_variable(
     workspace_id: &str,
     api_conn_prop: &TerraformApiConnectionProperty,
@@ -225,7 +228,10 @@ pub async fn update_variable(
 
 /// Create Terraform Workspace variable(s).
 ///
-/// **Remark:** To prevent [`Rate Limiting`](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#rate-limiting), limit the rate 20 requests per second.
+/// ## Remark
+///
+/// To prevent [`Rate Limiting`](https://developer.hashicorp.com/terraform/cloud-docs/api-docs#rate-limiting),
+/// limit the rate 20 requests per second.
 pub async fn create_variable(
     workspace_id: &str,
     api_conn_prop: &TerraformApiConnectionProperty,

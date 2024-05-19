@@ -28,13 +28,13 @@ pub fn new_clap_command() -> clap::ArgMatches {
                 ),
         )
         .arg(
-            Arg::new("enable_info_log")
-                .short('l')
-                .long("info-log")
+            Arg::new("disable_log")
+                .short('q')
+                .long("disable-log")
                 .action(ArgAction::SetTrue)
                 .help(
-                    "Enable `Info` log.\nNote that `Error` log is always enabled regardless of \
-                     this flag.",
+                    "Disable `Info` and `Warn` log.\nNote that `Error` log is always enabled \
+                     regardless of this flag.",
                 ),
         )
         .arg(

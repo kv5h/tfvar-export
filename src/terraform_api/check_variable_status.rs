@@ -2,6 +2,8 @@
 
 use std::collections::HashMap;
 
+use log::info;
+
 use crate::terraform_api::connection_prop::TerraformApiConnectionProperty;
 
 /// Terraform variable status
@@ -21,7 +23,7 @@ impl TerraformVariableStatus {
     }
 }
 
-/// Checks specified variables are already exist or not.
+/// Checks specified variables already exist or not.
 pub async fn check_variable_status(
     workspace_id: &str,
     api_conn_prop: &TerraformApiConnectionProperty,
@@ -29,6 +31,8 @@ pub async fn check_variable_status(
 ) -> Result<Vec<TerraformVariableStatus>, Box<dyn std::error::Error>> {
     let mut url = api_conn_prop.base_url().clone();
     let token = api_conn_prop.token();
+
+    info!("Processing Workspace: {}", workspace_id);
 
     let path = format!("/api/v2/workspaces/{}/vars", workspace_id);
     url.set_path(&path);
@@ -42,7 +46,6 @@ pub async fn check_variable_status(
         .text()
         .await?;
 
-    //  `(name, id)` of existing variables
     let mut existing_variables = HashMap::new();
     let response_json_value: serde_json::Value = serde_json::from_str(&response)?;
     response_json_value["data"]
