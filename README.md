@@ -1,3 +1,5 @@
+![cargo_ci](https://github.com/kv5h/tfvar-export/actions/workflows/cargo_ci.yaml/badge.svg)
+
 # tfvar-export
 
 Set the Terraform Cloud variables across Projects and Workspaces from an output
