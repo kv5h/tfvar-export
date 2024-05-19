@@ -65,7 +65,7 @@ pub fn new_clap_command() -> clap::ArgMatches {
                 .required_unless_present("show_workspaces")
                 .value_name("PATH_TO_OUTPUT_VALUES_FILE")
                 .help(
-                    "Path to the output values file generated with `terraform output \
+                    "Path to the output values file generated with\n`terraform output \
                      --json`.\nRequired unless `--show-workspaces` is set.",
                 ),
         )

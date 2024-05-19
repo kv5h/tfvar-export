@@ -1,7 +1,7 @@
 # tfvar-export
 
-Set Terraform Cloud variables across Projects and Workspaces from outputs of
-current workspace.
+Set the Terraform Cloud variables across Projects and Workspaces from an output
+file.
 
 ## Motivation
 
@@ -30,10 +30,13 @@ between workspaces.
 ## Prerequisite
 
 1. Export environment variables
-   1. Terraform Cloud organization name as `TFVE_ORGANIZATION_NAME`
-      1. Required if `--show-workspaces` is specified.
-   2. Terraform Cloud token as `TFVE_TOKEN`
-2. Specify outputs to be exported to other workspaces. See
+   1. Terraform Cloud token as `TFVE_TOKEN`
+   1. (Optional) Terraform Cloud organization name as `TFVE_ORGANIZATION_NAME`
+      1. Required if `--show-workspaces` flag is set.
+1. Generate output values file with `terraform output --json`
+   1. Values in this file are created or updated as variables with specified
+      name and description.
+1. Specify outputs to be exported to other workspaces. See
    [Below](#define-export-list) for details.
 
 ### Define export list
@@ -87,7 +90,7 @@ description.
 **REMARK:**
 
 - Updating is allowed by using the `--allow-update` flag.
-- You can use `#` to comment out a whole line.
+- To comment out a whole line, use `#`.
 
 ## Usage
 
@@ -95,7 +98,8 @@ description.
 Usage: tfvar-export [OPTIONS] [PATH_TO_OUTPUT_VALUES_FILE] [PATH_TO_EXPORT_LIST]
 
 Arguments:
-  [PATH_TO_OUTPUT_VALUES_FILE]  Path to the output values file generated with `terraform output --json`.
+  [PATH_TO_OUTPUT_VALUES_FILE]  Path to the output values file generated with
+                                `terraform output --json`.
                                 Required unless `--show-workspaces` is set.
   [PATH_TO_EXPORT_LIST]         Path to the export list.
                                 Required unless `--show-workspaces` is set.
@@ -110,7 +114,7 @@ Options:
           Disable `Info` and `Warn` log.
           Note that `Error` log is always enabled regardless of this flag.
   -w, --show-workspaces
-          Show available workspaces.
+          Show available workspaces and exit.
   -u, --allow-update
           Allow update of existing values.
   -h, --help
