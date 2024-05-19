@@ -32,8 +32,8 @@ pub fn read_export_list(
         entries.push(line)
     }
 
-    if entries.len().lt(&1) {
-        log::error!("No valid entries found in export list.");
+    if entries.len() < 1 {
+        log::warn!("No valid entries were found in the export list.");
         return Ok(None);
     }
 

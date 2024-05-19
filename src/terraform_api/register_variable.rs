@@ -2,9 +2,6 @@
 //!
 //! **API Reference:** https://developer.hashicorp.com/terraform/cloud-docs/api-docs/workspace-variables
 
-use std::collections::HashMap;
-
-use log::info;
 use serde_json::json;
 
 use crate::terraform_api::connection_prop::TerraformApiConnectionProperty;
@@ -96,7 +93,7 @@ pub async fn update_variable(
     let mut url = api_conn_prop.base_url().clone();
     let token = api_conn_prop.token();
 
-    info!("Processing workspace ID: {}.", workspace_id);
+    log::info!("Processing workspace ID: {}.", workspace_id);
 
     let mut result = Vec::new();
 
@@ -125,22 +122,22 @@ pub async fn update_variable(
             continue;
         }
 
-        let is_hcl = match &terraform_variable_property.get(i).unwrap().get_value() {
-            x if x.is_boolean()
-                | x.is_f64()
-                | x.is_i64()
-                | x.is_number()
-                | x.is_string()
-                | x.is_u64() =>
-            {
-                false
-            },
-            _ => true,
+        let value_for_type = terraform_variable_property.get(i).unwrap().get_value();
+        let is_hcl = if value_for_type.is_array() || value_for_type.is_object() {
+            true
+        } else {
+            false
         };
 
-        let is_string = match &terraform_variable_property.get(i).unwrap().get_value() {
-            x if x.is_string() => true,
-            _ => false,
+        let is_string = if terraform_variable_property
+            .get(i)
+            .unwrap()
+            .get_value()
+            .is_string()
+        {
+            true
+        } else {
+            false
         };
 
         let description = match &terraform_variable_property
@@ -181,8 +178,6 @@ pub async fn update_variable(
                   }
               }
         });
-        let mut map = HashMap::new();
-        map.insert("data", data.to_string());
 
         let response = reqwest::Client::new()
             .patch(url.as_str())
@@ -243,7 +238,7 @@ pub async fn create_variable(
     let path = format!("/api/v2/workspaces/{}/vars", workspace_id);
     url.set_path(&path);
 
-    info!("Processing workspace ID: {}.", workspace_id);
+    log::info!("Processing workspace ID: {}.", workspace_id);
 
     let mut result = Vec::new();
 
@@ -260,17 +255,11 @@ pub async fn create_variable(
             continue;
         }
 
-        let is_hcl = match &terraform_variable_property.get(i).unwrap().get_value() {
-            x if x.is_boolean()
-                | x.is_f64()
-                | x.is_i64()
-                | x.is_number()
-                | x.is_string()
-                | x.is_u64() =>
-            {
-                false
-            },
-            _ => true,
+        let value_for_type = terraform_variable_property.get(i).unwrap().get_value();
+        let is_hcl = if value_for_type.is_array() || value_for_type.is_object() {
+            true
+        } else {
+            false
         };
 
         let is_string = match &terraform_variable_property.get(i).unwrap().get_value() {
@@ -315,8 +304,6 @@ pub async fn create_variable(
                   }
               }
         });
-        let mut map = HashMap::new();
-        map.insert("data", data.to_string());
 
         let response = reqwest::Client::new()
             .post(url.as_str())
@@ -624,7 +611,7 @@ pub mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
+    #[ignore = "Takes a little long time"]
     async fn test_create_variable_full() {
         let api_conn_prop = TerraformApiConnectionProperty::new(
             url::Url::parse("https://app.terraform.io").unwrap(),

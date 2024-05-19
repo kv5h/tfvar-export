@@ -2,8 +2,6 @@
 
 use std::collections::HashMap;
 
-use log::info;
-
 use crate::terraform_api::connection_prop::TerraformApiConnectionProperty;
 
 /// Terraform variable status
@@ -32,7 +30,7 @@ pub async fn check_variable_status(
     let mut url = api_conn_prop.base_url().clone();
     let token = api_conn_prop.token();
 
-    info!("Processing Workspace: {}", workspace_id);
+    log::info!("Processing Workspace: {}", workspace_id);
 
     let path = format!("/api/v2/workspaces/{}/vars", workspace_id);
     url.set_path(&path);
