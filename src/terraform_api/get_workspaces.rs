@@ -83,13 +83,6 @@ pub async fn get_projects(
 /// Get Terraform workspaces and return vector of `TerraformWorkspace` struct.
 ///
 /// Using `--show-workspaces` flag prints workspaces with their associated project.
-///
-/// ## Example
-///
-/// ```rust
-/// let res: Vec<TerraformWorkspace> =
-///     get_workspaces(false, api_conn_prop).await?;
-/// ```
 pub async fn get_workspaces(
     show_workspaces: bool,
     organization_name: &str,
@@ -152,4 +145,30 @@ pub async fn get_workspaces(
     }
 
     Ok(terraform_workspaces)
+}
+
+#[cfg(test)]
+pub mod tests {
+
+    use super::*;
+
+    #[tokio::test]
+    #[ignore = "Expected value differs depending on the environment."]
+    async fn test_get_projects() {
+        // TODO: Expected value differs depending on the environment.
+        const WORKSPACE_NUMBERS: usize = 4;
+
+        let api_conn_prop = TerraformApiConnectionProperty::new(
+            url::Url::parse("https://app.terraform.io").unwrap(),
+            std::env::var("TFVE_TOKEN").unwrap(),
+        );
+        let organization_name = std::env::var("TFVE_ORGANIZATION_NAME")
+            .expect("Failed to read `TFVE_ORGANIZATION_NAME`.");
+
+        let resp = get_workspaces(true, &organization_name, &api_conn_prop)
+            .await
+            .unwrap();
+
+        assert_eq!(resp.len(), WORKSPACE_NUMBERS)
+    }
 }
