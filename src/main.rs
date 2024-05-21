@@ -79,10 +79,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .split(',')
         .map(|val| val.to_string())
         .collect();
-    let workspace_ids: Vec<String> = workspace_names
+    let mut workspace_ids: Vec<String> = Vec::new();
+    workspace_names
         .into_iter()
-        .map(|val| workspace_name_id.get(&val).unwrap().to_owned())
-        .collect();
+        .for_each(|val| match workspace_name_id.get(&val) {
+            Some(v) => workspace_ids.push(v.to_string()),
+            None => log::warn!("{}: No such workspace, skipping.", val),
+        });
 
     // Variable name and its value
     let var_name_val = construct_export_value(export_list.unwrap(), output_values_file.unwrap())?;
