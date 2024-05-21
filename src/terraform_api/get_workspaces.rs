@@ -159,7 +159,7 @@ pub mod tests {
     use super::*;
 
     #[tokio::test]
-    #[ignore = "Expected value differs depending on the environment."]
+    #[ignore = "Requires API access, Expected value differs depending on the environment"]
     async fn test_get_projects() {
         // TODO: Expected value differs depending on the environment.
         const WORKSPACE_NUMBERS: usize = 4;

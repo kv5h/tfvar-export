@@ -88,6 +88,7 @@ mod tests {
     };
 
     #[tokio::test]
+    #[ignore = "Requires API access"]
     async fn test_check_variable_status() {
         // Should NOT exist
         let test_val_1 = uuid::Uuid::new_v4().to_string();

@@ -42,6 +42,5 @@ jobs:
                   -I{} rustfmt --edition 2021 --check {}
             - name: cargo build
               run: cargo build
-            # TODO: Searching for a way securely running api tests.
-            #- name: cargo test
-            #  run: cargo test
+            - name: cargo test
+              run: cargo test

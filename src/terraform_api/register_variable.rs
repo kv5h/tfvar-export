@@ -401,6 +401,7 @@ pub mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "Requires API access"]
     async fn test_update_variable() {
         let api_conn_prop = TerraformApiConnectionProperty::new(
             url::Url::parse("https://app.terraform.io").unwrap(),
@@ -484,6 +485,7 @@ pub mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "Requires API access"]
     async fn test_create_variable_with_description_short() {
         let api_conn_prop = TerraformApiConnectionProperty::new(
             url::Url::parse("https://app.terraform.io").unwrap(),
@@ -548,6 +550,7 @@ pub mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "Requires API access"]
     async fn test_create_variable_without_description_short() {
         let api_conn_prop = TerraformApiConnectionProperty::new(
             url::Url::parse("https://app.terraform.io").unwrap(),
@@ -611,7 +614,7 @@ pub mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "Takes a little long time"]
+    #[ignore = "Requires API access, Takes a little long time"]
     async fn test_create_variable_full() {
         let api_conn_prop = TerraformApiConnectionProperty::new(
             url::Url::parse("https://app.terraform.io").unwrap(),

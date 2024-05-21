@@ -129,6 +129,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
             })
             .collect();
+
         if 0 < vars_new.len() {
             let create_variable_result =
                 create_variable(&workspace_id, &api_conn_prop, &vars_new).await?;
